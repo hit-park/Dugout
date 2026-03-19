@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: dugout-api
+  profiles:
+    active: local
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  shutdown: graceful
+
+logging:
+  level:
+    com.dugout.api: DEBUG
+    org.hibernate.SQL: DEBUG
