@@ -17,6 +17,7 @@ Thumbs.db
 # Kotlin / Spring Boot
 # ===========================
 dugout-api/build/
+dugout-api/bin/
 dugout-api/.gradle/
 dugout-api/out/
 *.class

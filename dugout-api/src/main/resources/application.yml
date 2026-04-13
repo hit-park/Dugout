@@ -21,6 +21,15 @@ server:
   port: 8080
   shutdown: graceful
 
+jwt:
+  secret: ${JWT_SECRET:dugout-dev-secret-key-must-be-at-least-256-bits-long-for-hs256}
+  access-token-expiry: 900000
+  refresh-token-expiry: 2592000000
+
+oauth:
+  kakao:
+    user-info-url: https://kapi.kakao.com/v2/user/me
+
 logging:
   level:
     com.dugout.api: DEBUG
