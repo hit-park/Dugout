@@ -22,7 +22,12 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
                 it
-                    .requestMatchers("/api/v1/auth/kakao", "/api/v1/auth/naver", "/api/v1/auth/apple").permitAll()
+                    .requestMatchers(
+                        "/api/v1/auth/kakao",
+                        "/api/v1/auth/naver",
+                        "/api/v1/auth/google",
+                        "/api/v1/auth/apple",
+                    ).permitAll()
                     .requestMatchers("/api/v1/auth/refresh").permitAll()
                     .requestMatchers("/api/v1/health").permitAll()
                     .anyRequest().authenticated()

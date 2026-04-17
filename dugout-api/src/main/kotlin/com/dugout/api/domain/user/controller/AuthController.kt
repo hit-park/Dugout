@@ -3,6 +3,7 @@ package com.dugout.api.domain.user.controller
 import com.dugout.api.domain.user.dto.AuthResponse
 import com.dugout.api.domain.user.dto.OAuthLoginRequest
 import com.dugout.api.domain.user.dto.TokenRefreshRequest
+import com.dugout.api.domain.user.entity.AuthProvider
 import com.dugout.api.domain.user.service.AuthService
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -20,7 +21,19 @@ class AuthController(
 ) {
     @PostMapping("/kakao")
     fun kakaoLogin(@Valid @RequestBody request: OAuthLoginRequest): ResponseEntity<AuthResponse> =
-        ResponseEntity.ok(authService.kakaoLogin(request))
+        ResponseEntity.ok(authService.oauthLogin(AuthProvider.KAKAO, request))
+
+    @PostMapping("/naver")
+    fun naverLogin(@Valid @RequestBody request: OAuthLoginRequest): ResponseEntity<AuthResponse> =
+        ResponseEntity.ok(authService.oauthLogin(AuthProvider.NAVER, request))
+
+    @PostMapping("/google")
+    fun googleLogin(@Valid @RequestBody request: OAuthLoginRequest): ResponseEntity<AuthResponse> =
+        ResponseEntity.ok(authService.oauthLogin(AuthProvider.GOOGLE, request))
+
+    @PostMapping("/apple")
+    fun appleLogin(@Valid @RequestBody request: OAuthLoginRequest): ResponseEntity<AuthResponse> =
+        ResponseEntity.ok(authService.oauthLogin(AuthProvider.APPLE, request))
 
     @PostMapping("/refresh")
     fun refresh(@Valid @RequestBody request: TokenRefreshRequest): ResponseEntity<AuthResponse> =

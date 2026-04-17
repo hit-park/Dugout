@@ -2,6 +2,7 @@ package com.dugout.api.domain.user.controller
 
 import com.dugout.api.domain.user.dto.AuthResponse
 import com.dugout.api.domain.user.dto.UserResponse
+import com.dugout.api.domain.user.entity.AuthProvider
 import com.dugout.api.domain.user.service.AuthService
 import com.dugout.api.global.auth.JwtFilter
 import com.dugout.api.global.auth.JwtProvider
@@ -9,6 +10,7 @@ import com.dugout.api.global.config.SecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -44,7 +46,7 @@ class AuthControllerTest {
 
     @Test
     fun `POST auth kakao - 카카오 로그인 성공`() {
-        whenever(authService.kakaoLogin(any())).thenReturn(sampleAuthResponse)
+        whenever(authService.oauthLogin(eq(AuthProvider.KAKAO), any())).thenReturn(sampleAuthResponse)
 
         mockMvc.perform(
             post("/api/v1/auth/kakao")
@@ -55,6 +57,45 @@ class AuthControllerTest {
             .andExpect(jsonPath("$.access_token").value("access-token"))
             .andExpect(jsonPath("$.refresh_token").value("refresh-token"))
             .andExpect(jsonPath("$.user.nickname").value("김주장"))
+    }
+
+    @Test
+    fun `POST auth naver - 네이버 로그인 성공`() {
+        whenever(authService.oauthLogin(eq(AuthProvider.NAVER), any())).thenReturn(sampleAuthResponse)
+
+        mockMvc.perform(
+            post("/api/v1/auth/naver")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"access_token": "naver-access-token"}"""),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.access_token").value("access-token"))
+    }
+
+    @Test
+    fun `POST auth google - 구글 로그인 성공`() {
+        whenever(authService.oauthLogin(eq(AuthProvider.GOOGLE), any())).thenReturn(sampleAuthResponse)
+
+        mockMvc.perform(
+            post("/api/v1/auth/google")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"access_token": "google-access-token"}"""),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.access_token").value("access-token"))
+    }
+
+    @Test
+    fun `POST auth apple - 애플 로그인 성공`() {
+        whenever(authService.oauthLogin(eq(AuthProvider.APPLE), any())).thenReturn(sampleAuthResponse)
+
+        mockMvc.perform(
+            post("/api/v1/auth/apple")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"access_token": "apple-identity-token"}"""),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.access_token").value("access-token"))
     }
 
     @Test

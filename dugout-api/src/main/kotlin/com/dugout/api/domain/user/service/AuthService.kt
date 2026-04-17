@@ -8,7 +8,8 @@ import com.dugout.api.domain.user.entity.AuthProvider
 import com.dugout.api.domain.user.entity.User
 import com.dugout.api.domain.user.repository.UserRepository
 import com.dugout.api.global.auth.JwtProvider
-import com.dugout.api.global.auth.KakaoOAuthClient
+import com.dugout.api.global.auth.OAuthClientFactory
+import com.dugout.api.global.auth.OAuthUserInfo
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
 import org.springframework.data.redis.core.StringRedisTemplate
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeUnit
 class AuthService(
     private val userRepository: UserRepository,
     private val jwtProvider: JwtProvider,
-    private val kakaoOAuthClient: KakaoOAuthClient,
+    private val oAuthClientFactory: OAuthClientFactory,
     private val redisTemplate: StringRedisTemplate,
 ) {
     companion object {
@@ -29,24 +30,11 @@ class AuthService(
     }
 
     @Transactional
-    fun kakaoLogin(request: OAuthLoginRequest): AuthResponse {
-        val kakaoUser = kakaoOAuthClient.getUserInfo(request.accessToken)
+    fun oauthLogin(provider: AuthProvider, request: OAuthLoginRequest): AuthResponse {
+        val client = oAuthClientFactory.getClient(provider)
+        val userInfo = client.getUserInfo(request.accessToken)
 
-        val user = userRepository.findByProviderAndProviderId(
-            AuthProvider.KAKAO,
-            kakaoUser.id.toString(),
-        )?.also { existing ->
-            existing.updateProfile(kakaoUser.nickname, kakaoUser.profileImageUrl)
-        } ?: userRepository.save(
-            User.create(
-                provider = AuthProvider.KAKAO,
-                providerId = kakaoUser.id.toString(),
-                nickname = kakaoUser.nickname,
-                email = kakaoUser.email,
-                profileImgUrl = kakaoUser.profileImageUrl,
-            ),
-        )
-
+        val user = findOrCreateUser(userInfo)
         return issueTokens(user)
     }
 
@@ -75,6 +63,28 @@ class AuthService(
 
     fun logout(userId: Long) {
         redisTemplate.delete("$REFRESH_TOKEN_PREFIX$userId")
+    }
+
+    private fun findOrCreateUser(userInfo: OAuthUserInfo): User {
+        val existing = userRepository.findByProviderAndProviderId(
+            userInfo.provider,
+            userInfo.providerId,
+        )
+
+        if (existing != null) {
+            existing.updateProfile(userInfo.nickname, userInfo.profileImageUrl)
+            return existing
+        }
+
+        return userRepository.save(
+            User.create(
+                provider = userInfo.provider,
+                providerId = userInfo.providerId,
+                nickname = userInfo.nickname,
+                email = userInfo.email,
+                profileImgUrl = userInfo.profileImageUrl,
+            ),
+        )
     }
 
     private fun issueTokens(user: User): AuthResponse {

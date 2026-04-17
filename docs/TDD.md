@@ -72,10 +72,14 @@
   │  │ (Push)    │ │ 알림톡   │ │ (날씨)      │  │
   │  │           │ │ + OAuth  │ │             │  │
   │  └───────────┘ └──────────┘ └─────────────┘  │
-  │  ┌───────────┐ ┌──────────┐                   │
-  │  │ 네이버    │ │ LLM API  │                   │
-  │  │ OAuth     │ │ (Claude) │                   │
-  │  └───────────┘ └──────────┘                   │
+  │  ┌───────────┐ ┌──────────┐ ┌─────────────┐  │
+  │  │ 네이버    │ │ Google   │ │ Apple Sign  │  │
+  │  │ OAuth     │ │ OAuth    │ │ In (JWKS)   │  │
+  │  └───────────┘ └──────────┘ └─────────────┘  │
+  │  ┌───────────┐                                 │
+  │  │ LLM API   │                                 │
+  │  │ (Claude)  │                                 │
+  │  └───────────┘                                 │
   └───────────────────────────────────────────────┘
 ```
 
@@ -118,7 +122,13 @@ dugout-api/
 │   │   ├── auth/             # 인증/인가
 │   │   │   ├── JwtProvider.kt
 │   │   │   ├── JwtFilter.kt
-│   │   │   └── OAuth2Handler.kt
+│   │   │   ├── OAuthClient.kt          # 공통 인터페이스
+│   │   │   ├── OAuthUserInfo.kt        # 통합 사용자 정보 DTO
+│   │   │   ├── OAuthClientFactory.kt   # provider → client 매핑
+│   │   │   ├── KakaoOAuthClient.kt
+│   │   │   ├── NaverOAuthClient.kt
+│   │   │   ├── GoogleOAuthClient.kt
+│   │   │   └── AppleOAuthClient.kt     # JWKS 기반 JWT 검증
 │   │   ├── error/            # 글로벌 예외 처리
 │   │   │   ├── ErrorCode.kt
 │   │   │   ├── BusinessException.kt
@@ -210,10 +220,12 @@ dugout-api/
 
 | Method | Endpoint | 설명 |
 |--------|----------|------|
-| POST | /api/v1/auth/kakao | 카카오 로그인 |
-| POST | /api/v1/auth/naver | 네이버 로그인 |
-| POST | /api/v1/auth/apple | Apple 로그인 |
-| POST | /api/v1/auth/refresh | 토큰 갱신 |
+| POST | /api/v1/auth/kakao | 카카오 로그인 (Access Token) |
+| POST | /api/v1/auth/naver | 네이버 로그인 (Access Token) |
+| POST | /api/v1/auth/google | Google 로그인 (Access Token) |
+| POST | /api/v1/auth/apple | Apple 로그인 (Identity Token / JWT) |
+| POST | /api/v1/auth/refresh | 토큰 갱신 (Refresh Token Rotation) |
+| DELETE | /api/v1/auth/logout | 로그아웃 (Refresh Token 무효화) |
 
 #### 팀 관리
 
@@ -308,7 +320,7 @@ CREATE TABLE users (
     nickname        VARCHAR(50) NOT NULL,
     phone           VARCHAR(20),
     profile_img_url VARCHAR(500),
-    provider        VARCHAR(20) NOT NULL,    -- KAKAO, NAVER, APPLE
+    provider        VARCHAR(20) NOT NULL,    -- KAKAO, NAVER, GOOGLE, APPLE
     provider_id     VARCHAR(255) NOT NULL,
     fcm_token       VARCHAR(500),
     kakao_alimtalk_agreed BOOLEAN DEFAULT FALSE,  -- 알림톡 수신 동의
@@ -1299,14 +1311,51 @@ jobs:
 
 ### 7-1. 인증 플로우
 
+클라이언트(iOS/Android)가 각 OAuth SDK로 토큰을 받아 백엔드에 전달하면,
+백엔드는 제공자별 방식으로 토큰을 검증하고 자체 JWT를 발급한다.
+
+#### Kakao / Naver / Google (Access Token 방식)
+
 ```
-Client → 카카오 로그인 → Authorization Code
-  → POST /api/v1/auth/kakao { code }
-    → 서버: 카카오 토큰 교환 → 사용자 정보 조회
-    → 신규: 회원 생성 / 기존: 조회
+Client → 각 SDK로 로그인 → Access Token 수신
+  → POST /api/v1/auth/{provider} { access_token }
+    → 서버: 제공자 사용자 정보 API 호출 (userinfo endpoint)
+    → 신규: 회원 생성 / 기존: 조회 후 프로필 동기화
     → JWT Access Token (15분) + Refresh Token (30일) 발급
-    → Refresh Token은 Redis에 저장 (디바이스별)
-  ← { accessToken, refreshToken, user }
+    → Refresh Token은 Redis에 저장 (key: refresh:{userId})
+  ← { access_token, refresh_token, user }
+```
+
+#### Apple (Identity Token 방식)
+
+```
+Client → ASAuthorization으로 로그인 → Identity Token (JWT) 수신
+  → POST /api/v1/auth/apple { access_token: <identityToken> }
+    → 서버: Apple JWKS (https://appleid.apple.com/auth/keys) 조회
+    → Identity Token의 서명/iss/aud/exp 검증
+    → 클레임에서 sub(userId), email 추출
+    → 신규: 회원 생성 / 기존: 조회
+    → JWT 발급 (Kakao/Naver/Google과 동일)
+  ← { access_token, refresh_token, user }
+```
+
+#### 토큰 갱신 (Refresh Token Rotation)
+
+```
+Client → POST /api/v1/auth/refresh { refresh_token }
+  → 서버: JWT 서명/만료 검증 → Redis의 저장된 토큰과 일치 확인
+  → 새 Access Token + 새 Refresh Token 발급
+  → Redis에 새 Refresh Token 저장 (이전 토큰 무효화)
+  ← { access_token, refresh_token, user }
+```
+
+#### OAuth 클라이언트 구조 (전략 패턴)
+
+```
+AuthService.oauthLogin(provider, request)
+  → OAuthClientFactory.getClient(provider)
+    → KakaoOAuthClient / NaverOAuthClient / GoogleOAuthClient / AppleOAuthClient
+      (각 구현체가 OAuthUserInfo로 정규화하여 반환)
 ```
 
 ### 7-2. 데이터 보호
@@ -1314,11 +1363,12 @@ Client → 카카오 로그인 → Authorization Code
 | 데이터 | 보호 방식 |
 |--------|-----------|
 | 비밀번호 | OAuth 전용, 비밀번호 미저장 |
-| 전화번호 | AES-256 암호화 저장 |
-| JWT | RS256 서명 |
-| Refresh Token | Redis + 디바이스 바인딩 |
+| 전화번호 | AES-256 암호화 저장 (Phase 2) |
+| JWT (자체 발급) | HS256 서명 (Phase 1) → RS256 전환 예정 |
+| JWT (Apple Identity) | RS256 서명, Apple JWKS로 공개키 조회 후 검증 |
+| Refresh Token | Redis 저장 (key: `refresh:{userId}`), 사용자당 1개. Phase 2에서 디바이스별 확장 |
 | API 통신 | HTTPS TLS 1.3 |
-| 민감 설정값 | AWS Secrets Manager |
+| 민감 설정값 (JWT secret, OAuth client id) | 환경 변수 → AWS Secrets Manager (운영) |
 
 ---
 

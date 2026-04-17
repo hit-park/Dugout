@@ -6,12 +6,12 @@ import com.dugout.api.domain.user.entity.AuthProvider
 import com.dugout.api.domain.user.entity.User
 import com.dugout.api.domain.user.repository.UserRepository
 import com.dugout.api.global.auth.JwtProvider
-import com.dugout.api.global.auth.KakaoOAuthClient
-import com.dugout.api.global.auth.KakaoUserInfo
+import com.dugout.api.global.auth.OAuthClient
+import com.dugout.api.global.auth.OAuthClientFactory
+import com.dugout.api.global.auth.OAuthUserInfo
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -24,14 +24,14 @@ import org.mockito.kotlin.whenever
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.data.redis.core.ValueOperations
 import java.util.Optional
-import java.util.concurrent.TimeUnit
 
 @ExtendWith(MockitoExtension::class)
 class AuthServiceTest {
 
     @Mock lateinit var userRepository: UserRepository
     @Mock lateinit var jwtProvider: JwtProvider
-    @Mock lateinit var kakaoOAuthClient: KakaoOAuthClient
+    @Mock lateinit var oAuthClientFactory: OAuthClientFactory
+    @Mock lateinit var oAuthClient: OAuthClient
     @Mock lateinit var redisTemplate: StringRedisTemplate
     @Mock lateinit var valueOperations: ValueOperations<String, String>
 
@@ -40,55 +40,120 @@ class AuthServiceTest {
     @BeforeEach
     fun setUp() {
         org.mockito.Mockito.lenient().`when`(redisTemplate.opsForValue()).thenReturn(valueOperations)
-        authService = AuthService(userRepository, jwtProvider, kakaoOAuthClient, redisTemplate)
+        authService = AuthService(userRepository, jwtProvider, oAuthClientFactory, redisTemplate)
     }
 
     @Test
     fun `카카오 로그인 - 신규 사용자 생성`() {
-        val kakaoUserInfo = KakaoUserInfo(
-            id = 12345L,
+        val userInfo = OAuthUserInfo(
+            provider = AuthProvider.KAKAO,
+            providerId = "12345",
             email = "test@kakao.com",
             nickname = "김주장",
             profileImageUrl = "https://example.com/photo.jpg",
         )
-        whenever(kakaoOAuthClient.getUserInfo("kakao-token")).thenReturn(kakaoUserInfo)
+        whenever(oAuthClientFactory.getClient(AuthProvider.KAKAO)).thenReturn(oAuthClient)
+        whenever(oAuthClient.getUserInfo("kakao-token")).thenReturn(userInfo)
         whenever(userRepository.findByProviderAndProviderId(AuthProvider.KAKAO, "12345")).thenReturn(null)
-        whenever(userRepository.save(any<User>())).thenAnswer { invocation ->
-            val user = invocation.getArgument<User>(0)
-            user
-        }
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
         whenever(jwtProvider.createAccessToken(any())).thenReturn("access-token")
         whenever(jwtProvider.createRefreshToken(any())).thenReturn("refresh-token")
 
-        val response = authService.kakaoLogin(OAuthLoginRequest("kakao-token"))
+        val response = authService.oauthLogin(AuthProvider.KAKAO, OAuthLoginRequest("kakao-token"))
 
         assertEquals("access-token", response.accessToken)
-        assertEquals("refresh-token", response.refreshToken)
         assertEquals("김주장", response.user.nickname)
         assertEquals("KAKAO", response.user.provider)
         verify(userRepository).save(any<User>())
     }
 
     @Test
-    fun `카카오 로그인 - 기존 사용자 프로필 업데이트`() {
+    fun `네이버 로그인 - 신규 사용자 생성`() {
+        val userInfo = OAuthUserInfo(
+            provider = AuthProvider.NAVER,
+            providerId = "naver-123",
+            email = "test@naver.com",
+            nickname = "박선수",
+            profileImageUrl = null,
+        )
+        whenever(oAuthClientFactory.getClient(AuthProvider.NAVER)).thenReturn(oAuthClient)
+        whenever(oAuthClient.getUserInfo("naver-token")).thenReturn(userInfo)
+        whenever(userRepository.findByProviderAndProviderId(AuthProvider.NAVER, "naver-123")).thenReturn(null)
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
+        whenever(jwtProvider.createAccessToken(any())).thenReturn("access-token")
+        whenever(jwtProvider.createRefreshToken(any())).thenReturn("refresh-token")
+
+        val response = authService.oauthLogin(AuthProvider.NAVER, OAuthLoginRequest("naver-token"))
+
+        assertEquals("박선수", response.user.nickname)
+        assertEquals("NAVER", response.user.provider)
+    }
+
+    @Test
+    fun `구글 로그인 - 신규 사용자 생성`() {
+        val userInfo = OAuthUserInfo(
+            provider = AuthProvider.GOOGLE,
+            providerId = "google-abc",
+            email = "test@gmail.com",
+            nickname = "이용병",
+            profileImageUrl = "https://lh3.googleusercontent.com/photo",
+        )
+        whenever(oAuthClientFactory.getClient(AuthProvider.GOOGLE)).thenReturn(oAuthClient)
+        whenever(oAuthClient.getUserInfo("google-token")).thenReturn(userInfo)
+        whenever(userRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, "google-abc")).thenReturn(null)
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
+        whenever(jwtProvider.createAccessToken(any())).thenReturn("access-token")
+        whenever(jwtProvider.createRefreshToken(any())).thenReturn("refresh-token")
+
+        val response = authService.oauthLogin(AuthProvider.GOOGLE, OAuthLoginRequest("google-token"))
+
+        assertEquals("이용병", response.user.nickname)
+        assertEquals("GOOGLE", response.user.provider)
+    }
+
+    @Test
+    fun `애플 로그인 - 신규 사용자 생성`() {
+        val userInfo = OAuthUserInfo(
+            provider = AuthProvider.APPLE,
+            providerId = "apple-xyz",
+            email = "test@privaterelay.appleid.com",
+            nickname = "test",
+            profileImageUrl = null,
+        )
+        whenever(oAuthClientFactory.getClient(AuthProvider.APPLE)).thenReturn(oAuthClient)
+        whenever(oAuthClient.getUserInfo("apple-identity-token")).thenReturn(userInfo)
+        whenever(userRepository.findByProviderAndProviderId(AuthProvider.APPLE, "apple-xyz")).thenReturn(null)
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
+        whenever(jwtProvider.createAccessToken(any())).thenReturn("access-token")
+        whenever(jwtProvider.createRefreshToken(any())).thenReturn("refresh-token")
+
+        val response = authService.oauthLogin(AuthProvider.APPLE, OAuthLoginRequest("apple-identity-token"))
+
+        assertEquals("APPLE", response.user.provider)
+    }
+
+    @Test
+    fun `OAuth 로그인 - 기존 사용자 프로필 업데이트`() {
         val existingUser = User.create(
             provider = AuthProvider.KAKAO,
             providerId = "12345",
             nickname = "이전닉네임",
             email = "test@kakao.com",
         )
-        val kakaoUserInfo = KakaoUserInfo(
-            id = 12345L,
+        val userInfo = OAuthUserInfo(
+            provider = AuthProvider.KAKAO,
+            providerId = "12345",
             email = "test@kakao.com",
             nickname = "새닉네임",
             profileImageUrl = "https://example.com/new-photo.jpg",
         )
-        whenever(kakaoOAuthClient.getUserInfo("kakao-token")).thenReturn(kakaoUserInfo)
+        whenever(oAuthClientFactory.getClient(AuthProvider.KAKAO)).thenReturn(oAuthClient)
+        whenever(oAuthClient.getUserInfo("kakao-token")).thenReturn(userInfo)
         whenever(userRepository.findByProviderAndProviderId(AuthProvider.KAKAO, "12345")).thenReturn(existingUser)
         whenever(jwtProvider.createAccessToken(any())).thenReturn("access-token")
         whenever(jwtProvider.createRefreshToken(any())).thenReturn("refresh-token")
 
-        val response = authService.kakaoLogin(OAuthLoginRequest("kakao-token"))
+        val response = authService.oauthLogin(AuthProvider.KAKAO, OAuthLoginRequest("kakao-token"))
 
         assertEquals("새닉네임", response.user.nickname)
     }

@@ -10,11 +10,11 @@ import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 
 @Component
-class KakaoOAuthClient(
-    @Value("\${oauth.kakao.user-info-url}") private val userInfoUrl: String,
+class NaverOAuthClient(
+    @Value("\${oauth.naver.user-info-url}") private val userInfoUrl: String,
 ) : OAuthClient {
 
-    override val provider: AuthProvider = AuthProvider.KAKAO
+    override val provider: AuthProvider = AuthProvider.NAVER
 
     private val log = LoggerFactory.getLogger(javaClass)
     private val webClient = WebClient.builder().build()
@@ -25,36 +25,41 @@ class KakaoOAuthClient(
                 .uri(userInfoUrl)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 .retrieve()
-                .bodyToMono(KakaoApiResponse::class.java)
+                .bodyToMono(NaverApiResponse::class.java)
                 .block() ?: throw BusinessException(ErrorCode.OAUTH_PROVIDER_ERROR)
 
+            if (response.resultcode != "00" || response.response == null) {
+                log.warn("네이버 사용자 정보 조회 실패: code={}, message={}", response.resultcode, response.message)
+                throw BusinessException(ErrorCode.OAUTH_PROVIDER_ERROR)
+            }
+
+            val profile = response.response
             return OAuthUserInfo(
-                provider = AuthProvider.KAKAO,
-                providerId = response.id.toString(),
-                email = response.kakaoAccount?.email,
-                nickname = response.kakaoAccount?.profile?.nickname ?: "사용자",
-                profileImageUrl = response.kakaoAccount?.profile?.profileImageUrl,
+                provider = AuthProvider.NAVER,
+                providerId = profile.id,
+                email = profile.email,
+                nickname = profile.nickname ?: profile.name ?: "사용자",
+                profileImageUrl = profile.profileImage,
             )
         } catch (e: BusinessException) {
             throw e
         } catch (e: Exception) {
-            log.error("카카오 사용자 정보 조회 실패", e)
+            log.error("네이버 사용자 정보 조회 실패", e)
             throw BusinessException(ErrorCode.OAUTH_PROVIDER_ERROR)
         }
     }
 }
 
-data class KakaoApiResponse(
-    val id: Long,
-    val kakaoAccount: KakaoAccount?,
+data class NaverApiResponse(
+    val resultcode: String,
+    val message: String?,
+    val response: NaverProfile?,
 ) {
-    data class KakaoAccount(
+    data class NaverProfile(
+        val id: String,
         val email: String?,
-        val profile: KakaoProfile?,
-    )
-
-    data class KakaoProfile(
         val nickname: String?,
-        val profileImageUrl: String?,
+        val name: String?,
+        val profileImage: String?,
     )
 }

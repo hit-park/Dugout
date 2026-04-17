@@ -21,6 +21,7 @@ class JwtFilter(
         private val PERMIT_PATHS = listOf(
             "/api/v1/auth/kakao",
             "/api/v1/auth/naver",
+            "/api/v1/auth/google",
             "/api/v1/auth/apple",
             "/api/v1/auth/refresh",
             "/api/v1/health",

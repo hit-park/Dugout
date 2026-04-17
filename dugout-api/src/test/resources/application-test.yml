@@ -23,3 +23,11 @@ jwt:
 oauth:
   kakao:
     user-info-url: https://kapi.kakao.com/v2/user/me
+  naver:
+    user-info-url: https://openapi.naver.com/v1/nid/me
+  google:
+    user-info-url: https://openidconnect.googleapis.com/v1/userinfo
+  apple:
+    jwks-url: https://appleid.apple.com/auth/keys
+    issuer: https://appleid.apple.com
+    client-id: com.dugout.ios.test

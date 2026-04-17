@@ -10,11 +10,11 @@ import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 
 @Component
-class KakaoOAuthClient(
-    @Value("\${oauth.kakao.user-info-url}") private val userInfoUrl: String,
+class GoogleOAuthClient(
+    @Value("\${oauth.google.user-info-url}") private val userInfoUrl: String,
 ) : OAuthClient {
 
-    override val provider: AuthProvider = AuthProvider.KAKAO
+    override val provider: AuthProvider = AuthProvider.GOOGLE
 
     private val log = LoggerFactory.getLogger(javaClass)
     private val webClient = WebClient.builder().build()
@@ -25,36 +25,28 @@ class KakaoOAuthClient(
                 .uri(userInfoUrl)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 .retrieve()
-                .bodyToMono(KakaoApiResponse::class.java)
+                .bodyToMono(GoogleApiResponse::class.java)
                 .block() ?: throw BusinessException(ErrorCode.OAUTH_PROVIDER_ERROR)
 
             return OAuthUserInfo(
-                provider = AuthProvider.KAKAO,
-                providerId = response.id.toString(),
-                email = response.kakaoAccount?.email,
-                nickname = response.kakaoAccount?.profile?.nickname ?: "사용자",
-                profileImageUrl = response.kakaoAccount?.profile?.profileImageUrl,
+                provider = AuthProvider.GOOGLE,
+                providerId = response.sub,
+                email = response.email,
+                nickname = response.name ?: response.email?.substringBefore("@") ?: "사용자",
+                profileImageUrl = response.picture,
             )
         } catch (e: BusinessException) {
             throw e
         } catch (e: Exception) {
-            log.error("카카오 사용자 정보 조회 실패", e)
+            log.error("구글 사용자 정보 조회 실패", e)
             throw BusinessException(ErrorCode.OAUTH_PROVIDER_ERROR)
         }
     }
 }
 
-data class KakaoApiResponse(
-    val id: Long,
-    val kakaoAccount: KakaoAccount?,
-) {
-    data class KakaoAccount(
-        val email: String?,
-        val profile: KakaoProfile?,
-    )
-
-    data class KakaoProfile(
-        val nickname: String?,
-        val profileImageUrl: String?,
-    )
-}
+data class GoogleApiResponse(
+    val sub: String,
+    val email: String?,
+    val name: String?,
+    val picture: String?,
+)
