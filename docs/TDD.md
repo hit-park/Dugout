@@ -404,7 +404,7 @@ CREATE TABLE attendances (
     match_id        BIGINT NOT NULL REFERENCES matches(id),
     user_id         BIGINT NOT NULL REFERENCES users(id),
     status          VARCHAR(20) NOT NULL,
-                    -- ATTEND, ABSENT, MAYBE, LATE
+                    -- ATTEND, ABSENT, MAYBE, LATE, EARLY_LEAVE
     reason          VARCHAR(200),
     responded_at    TIMESTAMP NOT NULL DEFAULT NOW(),
     -- AI 예측 필드
