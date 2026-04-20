@@ -34,8 +34,12 @@ enum class ErrorCode(
 
     // Match
     MATCH_NOT_FOUND(HttpStatus.NOT_FOUND, "경기를 찾을 수 없습니다"),
+    INVALID_MATCH_DATE(HttpStatus.BAD_REQUEST, "유효하지 않은 경기 날짜입니다"),
+    MATCH_ALREADY_CANCELLED(HttpStatus.BAD_REQUEST, "이미 취소된 경기입니다"),
 
     // Attendance
     ALREADY_VOTED(HttpStatus.CONFLICT, "이미 투표했습니다"),
+    VOTE_NOT_FOUND(HttpStatus.NOT_FOUND, "투표 내역을 찾을 수 없습니다"),
     VOTE_DEADLINE_PASSED(HttpStatus.BAD_REQUEST, "투표 마감 시간이 지났습니다"),
+    INVALID_ATTENDANCE_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 출석 상태입니다"),
 }
