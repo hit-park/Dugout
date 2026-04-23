@@ -58,6 +58,20 @@ Package.resolved
 *.dSYM
 
 # ===========================
+# Tuist (생성 파일 제외)
+# ===========================
+# Tuist가 생성하는 Xcode 프로젝트/워크스페이스는 tuist generate로 재생성 가능하므로 추적 안 함
+dugout-ios/**/*.xcodeproj
+dugout-ios/**/*.xcworkspace
+dugout-ios/Derived/
+dugout-ios/.build/
+dugout-ios/Tuist/.build/
+dugout-ios/Tuist/Dependencies/
+dugout-ios/graph.dot
+# mise 환경 파일은 추적
+!dugout-ios/.mise.toml
+
+# ===========================
 # Android (Phase 2)
 # ===========================
 dugout-android/build/

@@ -87,7 +87,7 @@ dugout/
 - SwiftUI + MVVM + Clean Architecture
 - async/await 기반 네트워크 레이어
 - SwiftData로 오프라인 캐시
-- 디자인 시스템: PB 접두어 (PBButton, PBCard 등)
+- 디자인 시스템: DG 접두어 (DGButton, DGCard 등)
 
 ---
 
