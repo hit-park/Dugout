@@ -51,3 +51,7 @@ struct OAuthLoginRequestDTO: Encodable, Sendable {
         case accessToken = "access_token"
     }
 }
+
+struct DevLoginRequestDTO: Encodable, Sendable {
+    let nickname: String
+}

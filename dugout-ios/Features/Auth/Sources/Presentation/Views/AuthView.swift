@@ -8,7 +8,7 @@ import DugoutDesignSystem
 
 public struct AuthView: View {
     @Bindable var viewModel: AuthViewModel
-    @State private var devTokenInput: String = ""
+    @State private var devNicknameInput: String = ""
     @State private var showDevInput = false
 
     public init(viewModel: AuthViewModel) {
@@ -71,15 +71,13 @@ public struct AuthView: View {
 
     private var loginButtons: some View {
         VStack(spacing: DGSpacing.md) {
-            ForEach([AuthProvider.kakao, .naver, .google, .apple], id: \.self) { provider in
+            ForEach(AuthProvider.oauthProviders, id: \.self) { provider in
                 DGButton(
                     buttonLabel(for: provider),
                     style: buttonStyle(for: provider),
                     isLoading: isLoading,
-                    isEnabled: !isLoading
-                ) {
-                    showDevInput = true
-                }
+                    isEnabled: false // OAuth SDK 연동 전까지 비활성 (개발자 모드 사용)
+                ) {}
             }
         }
     }
@@ -88,7 +86,7 @@ public struct AuthView: View {
         Button {
             showDevInput = true
         } label: {
-            Text("개발자 모드 (토큰 직접 입력)")
+            Text("개발자 모드 (닉네임으로 로그인)")
                 .font(DGFont.caption)
                 .foregroundStyle(DGColor.textSecondary)
         }
@@ -98,31 +96,28 @@ public struct AuthView: View {
     private var developerInputSheet: some View {
         NavigationStack {
             Form {
-                Section("OAuth Access Token") {
-                    TextField("카카오/네이버/구글/애플 토큰", text: $devTokenInput, axis: .vertical)
-                        .lineLimit(3...6)
-                        .font(DGFont.caption)
+                Section("닉네임") {
+                    TextField("예: 테스트주장", text: $devNicknameInput)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                 }
 
                 Section {
-                    ForEach([AuthProvider.kakao, .naver, .google, .apple], id: \.self) { provider in
-                        Button("\(provider.rawValue)로 로그인 시도") {
-                            let token = devTokenInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                            guard !token.isEmpty else { return }
-                            showDevInput = false
-                            Task {
-                                await viewModel.login(provider: provider, accessToken: token)
-                            }
+                    Button("개발 로그인") {
+                        let nickname = devNicknameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !nickname.isEmpty else { return }
+                        showDevInput = false
+                        Task {
+                            await viewModel.devLogin(nickname: nickname)
                         }
                     }
+                    .disabled(devNicknameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 } footer: {
-                    Text("실제 OAuth SDK 연동 전 테스트용입니다. 각 제공자가 발급한 실제 토큰이어야 백엔드 검증을 통과합니다.")
+                    Text("백엔드 로컬 프로필에서만 동작합니다. 카카오 SDK 연동 전 앱 플로우를 검증하는 용도입니다. 같은 닉네임으로 재로그인하면 기존 계정으로 복귀합니다.")
                         .font(DGFont.caption)
                 }
             }
-            .navigationTitle("개발자 로그인")
+            .navigationTitle("개발 로그인")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -142,6 +137,7 @@ public struct AuthView: View {
         case .naver: "네이버로 시작하기"
         case .google: "Google로 시작하기"
         case .apple: "Apple로 시작하기"
+        case .dev: "개발 로그인"
         }
     }
 

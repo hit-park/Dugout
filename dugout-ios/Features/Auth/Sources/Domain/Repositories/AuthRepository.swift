@@ -13,4 +13,7 @@ public protocol AuthRepository: Sendable {
 
     /// 로그아웃 (서버 + 로컬 토큰 정리).
     func logout() async throws
+
+    /// 개발 전용 로그인. 백엔드 로컬 프로필에서만 동작.
+    func devLogin(nickname: String) async throws -> User
 }

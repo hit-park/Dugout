@@ -34,4 +34,11 @@ public enum AuthProvider: String, Sendable, Hashable, CaseIterable {
     case naver = "NAVER"
     case google = "GOOGLE"
     case apple = "APPLE"
+    /// 개발용 가짜 provider. UI에는 노출되지 않음.
+    case dev = "DEV"
+
+    /// 실제 로그인 버튼으로 노출할 OAuth 제공자 목록 (dev 제외).
+    public static var oauthProviders: [AuthProvider] {
+        [.kakao, .naver, .google, .apple]
+    }
 }

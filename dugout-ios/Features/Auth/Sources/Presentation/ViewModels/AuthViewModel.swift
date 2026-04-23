@@ -50,6 +50,19 @@ public final class AuthViewModel {
         }
     }
 
+    /// 개발 전용 로그인. 백엔드 local 프로필에서만 동작.
+    public func devLogin(nickname: String) async {
+        state = .loading
+        do {
+            let user = try await repository.devLogin(nickname: nickname)
+            state = .authenticated(user)
+        } catch let error as APIError {
+            state = .failed(error.userMessage)
+        } catch {
+            state = .failed("개발 로그인 중 오류가 발생했습니다")
+        }
+    }
+
     public func logout() async {
         do {
             try await repository.logout()

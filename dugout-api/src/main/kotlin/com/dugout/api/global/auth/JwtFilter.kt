@@ -24,6 +24,7 @@ class JwtFilter(
             "/api/v1/auth/google",
             "/api/v1/auth/apple",
             "/api/v1/auth/refresh",
+            "/api/v1/auth/dev-login",
             "/api/v1/health",
         )
     }

@@ -38,6 +38,24 @@ class AuthService(
         return issueTokens(user)
     }
 
+    /**
+     * 개발용 로그인. OAuth 검증을 건너뛰고 닉네임 기반으로 User를 생성/조회 후 JWT 발급.
+     * 로컬 프로필에서만 호출되도록 DevAuthController가 @Profile("local")로 제한된다.
+     */
+    @Transactional
+    fun devLogin(nickname: String): AuthResponse {
+        val providerId = "dev-${nickname}"
+        val userInfo = OAuthUserInfo(
+            provider = AuthProvider.DEV,
+            providerId = providerId,
+            email = null,
+            nickname = nickname,
+            profileImageUrl = null,
+        )
+        val user = findOrCreateUser(userInfo)
+        return issueTokens(user)
+    }
+
     fun refresh(request: TokenRefreshRequest): AuthResponse {
         if (!jwtProvider.validateToken(request.refreshToken)) {
             throw BusinessException(ErrorCode.INVALID_TOKEN)

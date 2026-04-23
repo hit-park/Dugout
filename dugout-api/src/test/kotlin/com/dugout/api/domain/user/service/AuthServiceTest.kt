@@ -215,4 +215,39 @@ class AuthServiceTest {
         authService.logout(1L)
         verify(redisTemplate).delete("refresh:1")
     }
+
+    @Test
+    fun `개발 로그인 - 신규 사용자 생성 (DEV provider)`() {
+        whenever(userRepository.findByProviderAndProviderId(AuthProvider.DEV, "dev-김주장"))
+            .thenReturn(null)
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
+        whenever(jwtProvider.createAccessToken(any())).thenReturn("access-token")
+        whenever(jwtProvider.createRefreshToken(any())).thenReturn("refresh-token")
+
+        val response = authService.devLogin("김주장")
+
+        assertEquals("김주장", response.user.nickname)
+        assertEquals("DEV", response.user.provider)
+        assertEquals("access-token", response.accessToken)
+        verify(userRepository).save(any<User>())
+    }
+
+    @Test
+    fun `개발 로그인 - 같은 닉네임으로 재로그인 시 기존 사용자 사용`() {
+        val existing = User.create(
+            provider = AuthProvider.DEV,
+            providerId = "dev-김주장",
+            nickname = "김주장",
+        )
+        whenever(userRepository.findByProviderAndProviderId(AuthProvider.DEV, "dev-김주장"))
+            .thenReturn(existing)
+        whenever(jwtProvider.createAccessToken(any())).thenReturn("access-token")
+        whenever(jwtProvider.createRefreshToken(any())).thenReturn("refresh-token")
+
+        val response = authService.devLogin("김주장")
+
+        assertEquals("김주장", response.user.nickname)
+        // 기존 사용자라 save 호출되지 않음
+        verify(userRepository, org.mockito.Mockito.never()).save(any<User>())
+    }
 }

@@ -29,6 +29,8 @@ class SecurityConfig(
                         "/api/v1/auth/apple",
                     ).permitAll()
                     .requestMatchers("/api/v1/auth/refresh").permitAll()
+                    // 개발 전용 로그인 (DevAuthController가 @Profile("local")로 제한됨)
+                    .requestMatchers("/api/v1/auth/dev-login").permitAll()
                     .requestMatchers("/api/v1/health").permitAll()
                     .anyRequest().authenticated()
             }

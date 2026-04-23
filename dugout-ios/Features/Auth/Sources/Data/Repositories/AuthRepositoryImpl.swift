@@ -37,6 +37,23 @@ public struct AuthRepositoryImpl: AuthRepository {
         return response.user.toDomain()
     }
 
+    public func devLogin(nickname: String) async throws -> User {
+        let body = DevLoginRequestDTO(nickname: nickname)
+        let endpoint = APIEndpoint.json(
+            path: "/api/v1/auth/dev-login",
+            method: .post,
+            body: body,
+            requiresAuth: false
+        )
+
+        let response: AuthResponseDTO = try await client.request(endpoint)
+        await tokenStore.save(
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken
+        )
+        return response.user.toDomain()
+    }
+
     public func logout() async throws {
         let endpoint = APIEndpoint(path: "/api/v1/auth/logout", method: .delete)
         do {
