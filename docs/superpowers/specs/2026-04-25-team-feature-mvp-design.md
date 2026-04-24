@@ -48,6 +48,18 @@
 | D8 | 인증 강제 X — Deferred Auth 모델 | 사용자 요청. 비로그인 둘러보기 + 필요 시 인증 |
 | D9 | 인트로는 단순 스플래시 (1~1.5초 자동 전환) | 온보딩 콘텐츠 미정 상태의 최소 형태 |
 | D10 | RootView 제거, `DugoutApp` → `SplashView` → `MainTabView` 직진 | 사용자 요청. 분기 단순화 |
+| D11 | 시각적 디자인은 SwiftUI default 수준 — 기능 테스트 가능하면 충분 | UI/UX는 추후 변경 예정. 색·간격·폰트·아이콘·애니메이션·여백 polish 일체 후속 사이클 |
+
+### 시각 디자인 정책 (D11 적용)
+
+- 폼: `Form` / `TextField` / `Picker` / `Stepper` 표준 컴포넌트만 사용
+- 목록: `List` 기본 셀 (사용자 정의 셀 X)
+- 빈 상태: `ContentUnavailableView` 활용 (iOS 17+ 표준)
+- 에러 표시: `.alert(...)` 또는 인라인 `Text` (커스텀 토스트 X)
+- 색상·폰트: 시스템 default (튜닝 X)
+- 아이콘: `SF Symbols` 그대로 (커스텀 아이콘 X)
+- 로딩: `ProgressView()` 그대로
+- 마이페이지/팀 상세 레이아웃: 정보 나열 위주, 카드/그라데이션/그림자 등 일체 X
 
 ## 4. 진입 흐름
 
