@@ -74,7 +74,7 @@ struct MyPageView: View {
                         Text("로그인 방식")
                             .foregroundStyle(DGColor.textSecondary)
                         Spacer()
-                        Text(user.provider.rawValue)
+                        Text(user.provider.displayName)
                             .font(DGFont.callout)
                     }
                 }

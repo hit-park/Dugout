@@ -42,3 +42,17 @@ public enum AuthProvider: String, Sendable, Hashable, CaseIterable {
         [.kakao, .naver, .google, .apple]
     }
 }
+
+public extension AuthProvider {
+    /// UI에 노출할 사용자 친화적 표기.
+    /// rawValue("KAKAO", "DEV" 등)는 API 식별자이므로 UI에 직접 사용하지 않는다.
+    var displayName: String {
+        switch self {
+        case .kakao: "카카오"
+        case .naver: "네이버"
+        case .google: "Google"
+        case .apple: "Apple"
+        case .dev: "개발 모드"
+        }
+    }
+}
