@@ -18,6 +18,17 @@ public final class AuthViewModel {
     }
 
     public private(set) var state: State = .idle
+
+    public var isAuthenticated: Bool {
+        if case .authenticated = state { return true }
+        return false
+    }
+
+    public var currentUser: User? {
+        if case .authenticated(let user) = state { return user }
+        return nil
+    }
+
     private let repository: any AuthRepository
     private let tokenStore: TokenStore
 
