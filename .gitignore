@@ -97,3 +97,8 @@ docker-compose.override.yml
 # ===========================
 *.log
 logs/
+
+# ===========================
+# Git worktrees
+# ===========================
+.worktrees/
