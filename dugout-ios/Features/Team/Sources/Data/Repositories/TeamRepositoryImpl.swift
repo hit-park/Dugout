@@ -13,9 +13,53 @@ public struct TeamRepositoryImpl: TeamRepository {
         self.client = client
     }
 
+    public func createTeam(_ request: CreateTeamRequest) async throws -> Team {
+        let body = CreateTeamRequestDTO(
+            name: request.name,
+            region: request.region,
+            division: request.division,
+            activityDays: request.activityDays,
+            activityTime: request.activityTime,
+            lineupMode: request.lineupMode.rawValue
+        )
+        let endpoint = APIEndpoint.json(
+            path: "/api/v1/teams",
+            method: .post,
+            body: body
+        )
+        let dto: TeamDTO = try await client.request(endpoint)
+        return dto.toDomain()
+    }
+
     public func fetchTeam(id: Int64) async throws -> Team {
         let endpoint = APIEndpoint(path: "/api/v1/teams/\(id)")
         let dto: TeamDTO = try await client.request(endpoint)
+        return dto.toDomain()
+    }
+
+    public func fetchMembers(teamId: Int64) async throws -> [TeamMember] {
+        let endpoint = APIEndpoint(path: "/api/v1/teams/\(teamId)/members")
+        let dtos: [TeamMemberDTO] = try await client.request(endpoint)
+        return dtos.map { $0.toDomain() }
+    }
+
+    public func generateInviteCode(teamId: Int64) async throws -> String {
+        let endpoint = APIEndpoint(
+            path: "/api/v1/teams/\(teamId)/invite",
+            method: .post
+        )
+        let dto: InviteCodeResponseDTO = try await client.request(endpoint)
+        return dto.inviteCode
+    }
+
+    public func joinTeam(inviteCode: String) async throws -> TeamMember {
+        let body = JoinTeamRequestDTO(inviteCode: inviteCode)
+        let endpoint = APIEndpoint.json(
+            path: "/api/v1/teams/join",
+            method: .post,
+            body: body
+        )
+        let dto: TeamMemberDTO = try await client.request(endpoint)
         return dto.toDomain()
     }
 }
