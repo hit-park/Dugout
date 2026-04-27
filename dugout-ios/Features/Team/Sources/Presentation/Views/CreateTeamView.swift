@@ -34,8 +34,8 @@ public struct CreateTeamView: View {
                 }
 
                 Section("활동 요일") {
-                    ForEach(viewModel.availableDays, id: \.self) { day in
-                        Toggle(displayDay(day), isOn: Binding(
+                    ForEach(DayOfWeek.allCases, id: \.self) { day in
+                        Toggle(day.displayName, isOn: Binding(
                             get: { viewModel.activityDays.contains(day) },
                             set: { isOn in
                                 if isOn { viewModel.activityDays.insert(day) }
@@ -90,18 +90,5 @@ public struct CreateTeamView: View {
     private var isSubmitting: Bool {
         if case .submitting = viewModel.state { return true }
         return false
-    }
-
-    private func displayDay(_ code: String) -> String {
-        switch code {
-        case "MON": "월"
-        case "TUE": "화"
-        case "WED": "수"
-        case "THU": "목"
-        case "FRI": "금"
-        case "SAT": "토"
-        case "SUN": "일"
-        default: code
-        }
     }
 }

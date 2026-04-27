@@ -88,6 +88,13 @@ public final class HomeViewModel {
         pendingAction = nil
     }
 
+    /// 시트가 닫힐 때 호출. 비로그인 상태로 닫혔으면 pending action 정리.
+    public func onSheetDismissed(isAuthenticated: Bool) {
+        if !isAuthenticated {
+            pendingAction = nil
+        }
+    }
+
     /// 팀 생성/가입 완료 후 호출 — 시트 닫고 목록 새로고침.
     public func onTeamMutated() async {
         presentedSheet = nil

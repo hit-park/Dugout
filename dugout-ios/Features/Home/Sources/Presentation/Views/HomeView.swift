@@ -38,7 +38,9 @@ public struct HomeView: View {
                 Task { await viewModel.loadTeams() }
             }
         }
-        .sheet(item: $viewModel.presentedSheet) { sheet in
+        .sheet(item: $viewModel.presentedSheet, onDismiss: {
+            viewModel.onSheetDismissed(isAuthenticated: authViewModel.isAuthenticated)
+        }) { sheet in
             switch sheet {
             case .createTeam:
                 CreateTeamView { await viewModel.onTeamMutated() }
@@ -88,28 +90,7 @@ public struct HomeView: View {
 
     @ViewBuilder
     private var guestContent: some View {
-        VStack(spacing: DGSpacing.md) {
-            Image(systemName: "person.3")
-                .font(.system(size: 56))
-                .foregroundStyle(DGColor.textSecondary)
-            Text("아직 소속된 팀이 없어요")
-                .font(DGFont.headline)
-            Text("팀을 만들거나 초대 코드로 시작해보세요")
-                .font(DGFont.footnote)
-                .foregroundStyle(DGColor.textSecondary)
-
-            VStack(spacing: DGSpacing.sm) {
-                DGButton("팀 만들기") {
-                    viewModel.tapCreateTeam(isAuthenticated: authViewModel.isAuthenticated)
-                }
-                DGButton("팀 가입하기") {
-                    viewModel.tapJoinTeam(isAuthenticated: authViewModel.isAuthenticated)
-                }
-            }
-            .padding(.horizontal, DGSpacing.xl)
-            .padding(.top, DGSpacing.lg)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        noTeamPlaceholder(iconSize: 56)
     }
 
     private func teamList(teams: [MyTeam]) -> some View {
@@ -138,15 +119,8 @@ public struct HomeView: View {
     }
 
     private var actionButtons: some View {
-        VStack(spacing: DGSpacing.sm) {
-            DGButton("팀 만들기") {
-                viewModel.tapCreateTeam(isAuthenticated: authViewModel.isAuthenticated)
-            }
-            DGButton("팀 가입하기") {
-                viewModel.tapJoinTeam(isAuthenticated: authViewModel.isAuthenticated)
-            }
-        }
-        .padding(.top, DGSpacing.lg)
+        teamActionButtons
+            .padding(.top, DGSpacing.lg)
     }
 
     private func roleBadge(_ role: TeamRole) -> some View {
@@ -159,29 +133,9 @@ public struct HomeView: View {
             .clipShape(Capsule())
     }
 
+    @ViewBuilder
     private var emptyState: some View {
-        VStack(spacing: DGSpacing.md) {
-            Image(systemName: "person.3")
-                .font(.system(size: 48))
-                .foregroundStyle(DGColor.textSecondary)
-            Text("아직 소속된 팀이 없어요")
-                .font(DGFont.headline)
-            Text("팀을 만들거나 초대 코드로 시작해보세요")
-                .font(DGFont.footnote)
-                .foregroundStyle(DGColor.textSecondary)
-
-            VStack(spacing: DGSpacing.sm) {
-                DGButton("팀 만들기") {
-                    viewModel.tapCreateTeam(isAuthenticated: authViewModel.isAuthenticated)
-                }
-                DGButton("팀 가입하기") {
-                    viewModel.tapJoinTeam(isAuthenticated: authViewModel.isAuthenticated)
-                }
-            }
-            .padding(.horizontal, DGSpacing.xl)
-            .padding(.top, DGSpacing.lg)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        noTeamPlaceholder(iconSize: 48)
     }
 
     private func failedState(message: String) -> some View {
@@ -197,6 +151,37 @@ public struct HomeView: View {
                 Task { await viewModel.loadTeams() }
             }
             .padding(.horizontal, DGSpacing.xl)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var teamActionButtons: some View {
+        VStack(spacing: DGSpacing.sm) {
+            DGButton("팀 만들기") {
+                viewModel.tapCreateTeam(isAuthenticated: authViewModel.isAuthenticated)
+            }
+            DGButton("팀 가입하기") {
+                viewModel.tapJoinTeam(isAuthenticated: authViewModel.isAuthenticated)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func noTeamPlaceholder(iconSize: CGFloat) -> some View {
+        VStack(spacing: DGSpacing.md) {
+            Image(systemName: "person.3")
+                .font(.system(size: iconSize))
+                .foregroundStyle(DGColor.textSecondary)
+            Text("아직 소속된 팀이 없어요")
+                .font(DGFont.headline)
+            Text("팀을 만들거나 초대 코드로 시작해보세요")
+                .font(DGFont.footnote)
+                .foregroundStyle(DGColor.textSecondary)
+
+            teamActionButtons
+                .padding(.horizontal, DGSpacing.xl)
+                .padding(.top, DGSpacing.lg)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

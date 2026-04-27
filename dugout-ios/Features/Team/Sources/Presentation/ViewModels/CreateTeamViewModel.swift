@@ -22,11 +22,10 @@ public final class CreateTeamViewModel {
     public var name: String = ""
     public var region: String = ""
     public var division: Int = 4
-    public var activityDays: Set<String> = []
+    public var activityDays: Set<DayOfWeek> = []
     public var activityTime: String = ""
     public var lineupMode: LineupMode = .balanced
 
-    public let availableDays: [String] = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
     public let availableDivisions: [Int] = [1, 2, 3, 4]
 
     private let repository: any TeamRepository
@@ -52,7 +51,7 @@ public final class CreateTeamViewModel {
             name: trimmedName,
             region: trimmedRegion,
             division: division,
-            activityDays: Array(activityDays).sorted(),
+            activityDays: Array(activityDays).map(\.rawValue).sorted(),
             activityTime: trimmedTime.isEmpty ? nil : trimmedTime,
             lineupMode: lineupMode
         )
