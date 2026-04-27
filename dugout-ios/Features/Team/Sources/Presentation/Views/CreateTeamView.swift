@@ -23,6 +23,13 @@ public struct CreateTeamView: View {
     public var body: some View {
         NavigationStack {
             Form {
+                if case .failed(let message) = viewModel.state {
+                    Section {
+                        Label(message, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(DGColor.warning)
+                    }
+                }
+
                 Section("팀 정보") {
                     TextField("팀 이름", text: $viewModel.name)
                     TextField("지역 (예: 서울 강남)", text: $viewModel.region)
@@ -56,31 +63,29 @@ public struct CreateTeamView: View {
                     }
                     .pickerStyle(.segmented)
                 }
-
-                if case .failed(let message) = viewModel.state {
-                    Section {
-                        Text(message)
-                            .foregroundStyle(DGColor.warning)
-                    }
-                }
             }
             .navigationTitle("팀 만들기")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("취소") { dismiss() }
+                        .disabled(isSubmitting)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("생성") {
-                        Task {
-                            await viewModel.submit()
-                            if case .success = viewModel.state {
-                                await onCompleted()
-                                dismiss()
+                    if isSubmitting {
+                        ProgressView()
+                    } else {
+                        Button("생성") {
+                            Task {
+                                await viewModel.submit()
+                                if case .success = viewModel.state {
+                                    await onCompleted()
+                                    dismiss()
+                                }
                             }
                         }
+                        .disabled(!viewModel.canSubmit)
                     }
-                    .disabled(!viewModel.canSubmit)
                 }
             }
             .interactiveDismissDisabled(isSubmitting)

@@ -25,7 +25,10 @@ extension JSONEncoder {
 }
 
 private extension JSONDecoder.DateDecodingStrategy {
-    /// 2026-04-21T10:15:30 / 2026-04-21T10:15:30.123 / 2026-04-21T10:15:30Z 모두 허용.
+    /// 2026-04-21T10:15:30 / 2026-04-21T10:15:30.123 / 2026-04-21T10:15:30.207305000 /
+    /// 2026-04-21T10:15:30Z 모두 허용.
+    /// Spring Boot 3.x + jackson-datatype-jsr310 기본 LocalDateTime 직렬화가
+    /// timezone 없이 nano-seconds까지 fractional을 포함하므로 별도 처리한다.
     static var iso8601WithFractionalSeconds: JSONDecoder.DateDecodingStrategy {
         .custom { decoder in
             let container = try decoder.singleValueContainer()
@@ -38,6 +41,15 @@ private extension JSONDecoder.DateDecodingStrategy {
             }
             if let date = DateFormatters.localDateTime.date(from: raw) {
                 return date
+            }
+            // 백엔드가 LocalDateTime을 fractional seconds 포함 형태로 보낸 경우.
+            // DateFormatter의 fractional 자릿수는 고정 길이라 가변 정밀도를 못 받으므로
+            // fractional 부분을 잘라낸 뒤 초 단위로 다시 시도한다.
+            if let dotIndex = raw.firstIndex(of: ".") {
+                let trimmed = String(raw[..<dotIndex])
+                if let date = DateFormatters.localDateTime.date(from: trimmed) {
+                    return date
+                }
             }
             throw DecodingError.dataCorruptedError(
                 in: container,
