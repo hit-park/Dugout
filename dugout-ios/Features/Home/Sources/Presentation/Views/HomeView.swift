@@ -33,7 +33,6 @@ public struct HomeView: View {
             }
         }
         .onChange(of: authViewModel.isAuthenticated) { _, isAuth in
-            viewModel.onAuthChanged(isAuthenticated: isAuth)
             if isAuth {
                 Task { await viewModel.loadTeams() }
             }

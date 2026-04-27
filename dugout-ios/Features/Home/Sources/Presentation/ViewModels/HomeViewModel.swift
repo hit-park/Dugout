@@ -78,20 +78,18 @@ public final class HomeViewModel {
         }
     }
 
-    /// 인증 상태 변화 감지 시 호출. 로그인 직후 pending action을 이어간다.
-    public func onAuthChanged(isAuthenticated: Bool) {
-        guard isAuthenticated, let action = pendingAction else { return }
+    /// 시트가 닫힌 직후 호출. 로그인 시트가 인증 성공으로 닫힌 경우
+    /// pending action 시트(.createTeam / .joinTeam)를 이어서 표시한다.
+    /// 같은 transaction에서 sheet binding을 nil → 다른 값으로 swap하면
+    /// SwiftUI가 dismiss로 인식해 무시하므로 onDismiss 콜백을 사용한다.
+    public func onSheetDismissed(isAuthenticated: Bool) {
+        guard let action = pendingAction else { return }
+        pendingAction = nil
+        guard isAuthenticated else { return }
+
         switch action {
         case .createTeam: presentedSheet = .createTeam
         case .joinTeam: presentedSheet = .joinTeam
-        }
-        pendingAction = nil
-    }
-
-    /// 시트가 닫힐 때 호출. 비로그인 상태로 닫혔으면 pending action 정리.
-    public func onSheetDismissed(isAuthenticated: Bool) {
-        if !isAuthenticated {
-            pendingAction = nil
         }
     }
 
