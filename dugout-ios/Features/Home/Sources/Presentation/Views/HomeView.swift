@@ -97,19 +97,30 @@ public struct HomeView: View {
         ScrollView {
             VStack(spacing: DGSpacing.md) {
                 ForEach(teams) { team in
-                    DGCard {
-                        VStack(alignment: .leading, spacing: DGSpacing.sm) {
-                            HStack {
-                                Text(team.teamName)
-                                    .font(DGFont.title3)
-                                Spacer()
-                                roleBadge(team.role)
+                    NavigationLink {
+                        TeamDetailView(
+                            viewModel: TeamDetailViewModel(
+                                teamId: team.teamId,
+                                currentUserId: authViewModel.currentUser?.id
+                            )
+                        )
+                    } label: {
+                        DGCard {
+                            VStack(alignment: .leading, spacing: DGSpacing.sm) {
+                                HStack {
+                                    Text(team.teamName)
+                                        .font(DGFont.title3)
+                                        .foregroundStyle(DGColor.textPrimary)
+                                    Spacer()
+                                    roleBadge(team.role)
+                                }
+                                Text("가입일: \(team.joinedAt.formatted(date: .abbreviated, time: .omitted))")
+                                    .font(DGFont.footnote)
+                                    .foregroundStyle(DGColor.textSecondary)
                             }
-                            Text("가입일: \(team.joinedAt.formatted(date: .abbreviated, time: .omitted))")
-                                .font(DGFont.footnote)
-                                .foregroundStyle(DGColor.textSecondary)
                         }
                     }
+                    .buttonStyle(.plain)
                 }
 
                 actionButtons
