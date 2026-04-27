@@ -9,6 +9,7 @@ import DugoutDesignSystem
 
 public struct TeamDetailView: View {
     @State private var viewModel: TeamDetailViewModel
+    @State private var didCopy = false
 
     public init(viewModel: TeamDetailViewModel) {
         _viewModel = State(wrappedValue: viewModel)
@@ -95,9 +96,16 @@ public struct TeamDetailView: View {
                         Spacer()
                         Button {
                             UIPasteboard.general.string = code
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            didCopy = true
+                            Task {
+                                try? await Task.sleep(for: .seconds(1.5))
+                                didCopy = false
+                            }
                         } label: {
-                            Image(systemName: "doc.on.doc")
+                            Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
                         }
+                        .accessibilityLabel("초대 코드 복사")
                     }
                 } else if viewModel.isGeneratingInviteCode {
                     ProgressView("생성 중...")

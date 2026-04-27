@@ -57,6 +57,8 @@ public final class TeamDetailViewModel {
 
     public func load() async {
         state = .loading
+        inviteCode = nil
+        inviteCodeError = nil
         async let teamTask = repository.fetchTeam(id: teamId)
         async let membersTask = repository.fetchMembers(teamId: teamId)
         do {
