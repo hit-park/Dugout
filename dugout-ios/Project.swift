@@ -64,6 +64,7 @@ let homeFeature = frameworkTarget(
     dependencies: [
         .target(name: "DugoutCoreNetwork"),
         .target(name: "DugoutDesignSystem"),
+        .target(name: "DugoutAuthFeature"),
     ]
 )
 

@@ -5,17 +5,18 @@
 
 import SwiftUI
 import DugoutDesignSystem
+import DugoutAuthFeature
 
 public struct HomeView: View {
     @State private var viewModel: HomeViewModel
-    private let onLogout: () -> Void
+    @Bindable var authViewModel: AuthViewModel
 
     public init(
         viewModel: HomeViewModel = HomeViewModel(),
-        onLogout: @escaping () -> Void
+        authViewModel: AuthViewModel
     ) {
         _viewModel = State(wrappedValue: viewModel)
-        self.onLogout = onLogout
+        self.authViewModel = authViewModel
     }
 
     public var body: some View {
@@ -42,9 +43,6 @@ public struct HomeView: View {
                     Menu {
                         Button("새로고침") {
                             Task { await viewModel.loadTeams() }
-                        }
-                        Button("로그아웃", role: .destructive) {
-                            onLogout()
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
