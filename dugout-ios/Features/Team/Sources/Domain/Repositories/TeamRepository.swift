@@ -20,6 +20,9 @@ public protocol TeamRepository: Sendable {
 
     /// 초대 코드로 팀 가입
     func joinTeam(inviteCode: String) async throws -> TeamMember
+
+    /// 팀 정보 수정 (CAPTAIN/MANAGER 권한). 변경할 필드만 채워 보낸다.
+    func updateTeam(id: Int64, request: UpdateTeamRequest) async throws -> Team
 }
 
 /// 팀 생성 요청 데이터 (Domain 계층).
@@ -38,6 +41,32 @@ public struct CreateTeamRequest: Sendable, Equatable {
         activityDays: [String] = [],
         activityTime: String? = nil,
         lineupMode: LineupMode = .balanced
+    ) {
+        self.name = name
+        self.region = region
+        self.division = division
+        self.activityDays = activityDays
+        self.activityTime = activityTime
+        self.lineupMode = lineupMode
+    }
+}
+
+/// 팀 정보 수정 요청 데이터 (Domain 계층). 모든 필드 optional — 변경할 필드만 채워서 보낸다.
+public struct UpdateTeamRequest: Sendable, Equatable {
+    public let name: String?
+    public let region: String?
+    public let division: Int?
+    public let activityDays: [String]?
+    public let activityTime: String?
+    public let lineupMode: LineupMode?
+
+    public init(
+        name: String? = nil,
+        region: String? = nil,
+        division: Int? = nil,
+        activityDays: [String]? = nil,
+        activityTime: String? = nil,
+        lineupMode: LineupMode? = nil
     ) {
         self.name = name
         self.region = region

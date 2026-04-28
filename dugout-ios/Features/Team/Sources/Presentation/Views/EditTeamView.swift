@@ -1,0 +1,99 @@
+//
+//  EditTeamView.swift
+//  DugoutTeamFeature
+//
+
+import SwiftUI
+import DugoutDesignSystem
+
+public struct EditTeamView: View {
+    @State private var viewModel: EditTeamViewModel
+    private let onCompleted: @MainActor () async -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    public init(
+        viewModel: EditTeamViewModel,
+        onCompleted: @escaping @MainActor () async -> Void
+    ) {
+        _viewModel = State(wrappedValue: viewModel)
+        self.onCompleted = onCompleted
+    }
+
+    public var body: some View {
+        NavigationStack {
+            Form {
+                if case .failed(let message) = viewModel.state {
+                    Section {
+                        Label(message, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(DGColor.warning)
+                    }
+                }
+
+                Section("팀 정보") {
+                    TextField("팀 이름", text: $viewModel.name)
+                    TextField("지역 (예: 서울 강남)", text: $viewModel.region)
+                    Picker("부수", selection: $viewModel.division) {
+                        ForEach(viewModel.availableDivisions, id: \.self) { div in
+                            Text("\(div)부").tag(div)
+                        }
+                    }
+                }
+
+                Section("활동 요일") {
+                    ForEach(DayOfWeek.allCases, id: \.self) { day in
+                        Toggle(day.displayName, isOn: Binding(
+                            get: { viewModel.activityDays.contains(day) },
+                            set: { isOn in
+                                if isOn { viewModel.activityDays.insert(day) }
+                                else { viewModel.activityDays.remove(day) }
+                            }
+                        ))
+                    }
+                }
+
+                Section("활동 시간 (선택)") {
+                    TextField("예: 18:00-21:00", text: $viewModel.activityTime)
+                }
+
+                Section("라인업 모드") {
+                    Picker("모드", selection: $viewModel.lineupMode) {
+                        Text("균등 출전 (BALANCED)").tag(LineupMode.balanced)
+                        Text("실력 우선 (COMPETITIVE)").tag(LineupMode.competitive)
+                    }
+                    .pickerStyle(.segmented)
+                }
+            }
+            .navigationTitle("팀 정보 수정")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("취소") { dismiss() }
+                        .disabled(isSubmitting)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if isSubmitting {
+                        ProgressView()
+                    } else {
+                        Button("저장") {
+                            Task {
+                                await viewModel.submit()
+                                if case .success = viewModel.state {
+                                    await onCompleted()
+                                    dismiss()
+                                }
+                            }
+                        }
+                        .disabled(!viewModel.canSubmit)
+                    }
+                }
+            }
+            .interactiveDismissDisabled(isSubmitting)
+        }
+    }
+
+    private var isSubmitting: Bool {
+        if case .submitting = viewModel.state { return true }
+        return false
+    }
+}

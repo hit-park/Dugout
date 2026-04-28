@@ -9,6 +9,7 @@ import DugoutDesignSystem
 
 public struct TeamDetailView: View {
     @State private var viewModel: TeamDetailViewModel
+    @State private var showEditSheet = false
     @State private var didCopy = false
 
     public init(viewModel: TeamDetailViewModel) {
@@ -53,6 +54,20 @@ public struct TeamDetailView: View {
         .task {
             if case .idle = viewModel.state {
                 await viewModel.load()
+            }
+        }
+        .toolbar {
+            if viewModel.canEditTeam, case .loaded = viewModel.state {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("편집") { showEditSheet = true }
+                }
+            }
+        }
+        .sheet(isPresented: $showEditSheet) {
+            if case .loaded(let data) = viewModel.state {
+                EditTeamView(viewModel: EditTeamViewModel(team: data.team)) {
+                    await viewModel.load()
+                }
             }
         }
     }
