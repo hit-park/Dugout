@@ -249,10 +249,10 @@ dugout-api/
 | GET | /api/v1/teams/{teamId} | 팀 정보 조회 |
 | PUT | /api/v1/teams/{teamId} | 팀 정보 수정 |
 | POST | /api/v1/teams/{teamId}/invite | 초대 링크 생성 |
-| POST | /api/v1/teams/{teamId}/join | 팀 가입 |
+| POST | /api/v1/teams/join | 초대 코드로 팀 가입 |
 | GET | /api/v1/teams/{teamId}/members | 멤버 목록 |
-| PUT | /api/v1/teams/{teamId}/members/{userId} | 멤버 정보 수정 |
-| DELETE | /api/v1/teams/{teamId}/members/{userId} | 멤버 탈퇴/제외 |
+| PUT | /api/v1/teams/{teamId}/members/{memberId} | 멤버 정보 수정 (CAPTAIN) |
+| DELETE | /api/v1/teams/{teamId}/members/{memberId} | 멤버 추방 (CAPTAIN) |
 
 #### 경기 일정 & 출석
 
