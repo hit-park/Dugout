@@ -56,10 +56,6 @@ public enum TeamRole: String, Sendable, Hashable, CaseIterable {
         case .member: "일반"
         }
     }
-
-    public var canManageTeam: Bool {
-        self == .captain || self == .manager
-    }
 }
 
 public extension TeamRole {
