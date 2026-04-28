@@ -101,7 +101,7 @@ public final class TeamDetailViewModel {
     }
 
     public func updateMemberRole(_ role: TeamRole) async {
-        guard let member = selectedMember else { return }
+        guard !isMemberActionInFlight, let member = selectedMember else { return }
         isMemberActionInFlight = true
         defer {
             isMemberActionInFlight = false
@@ -122,7 +122,7 @@ public final class TeamDetailViewModel {
     }
 
     public func removeMember() async {
-        guard let member = selectedMember else { return }
+        guard !isMemberActionInFlight, let member = selectedMember else { return }
         isMemberActionInFlight = true
         defer {
             isMemberActionInFlight = false
