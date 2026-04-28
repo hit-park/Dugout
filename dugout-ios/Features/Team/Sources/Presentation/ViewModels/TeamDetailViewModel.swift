@@ -51,9 +51,9 @@ public final class TeamDetailViewModel {
         return me.role
     }
 
-    public var canShowInviteCode: Bool {
-        myRole == .captain
-    }
+    public var canShowInviteCode: Bool { myRole?.canShowInviteCode ?? false }
+    public var canEditTeam: Bool       { myRole?.canEditTeam ?? false }
+    public var canManageMembers: Bool  { myRole?.canManageMembers ?? false }
 
     public func load() async {
         state = .loading

@@ -61,3 +61,14 @@ public enum TeamRole: String, Sendable, Hashable, CaseIterable {
         self == .captain || self == .manager
     }
 }
+
+public extension TeamRole {
+    /// 팀 정보 수정 가능 여부 (백엔드 PUT /teams/{id} 권한과 일치).
+    var canEditTeam: Bool { self == .captain || self == .manager }
+
+    /// 초대 코드 영역 표시/생성 가능 여부 (백엔드 POST /teams/{id}/invite 권한과 일치).
+    var canShowInviteCode: Bool { self == .captain || self == .manager }
+
+    /// 다른 멤버 역할 변경/추방 가능 여부 (백엔드 PUT/DELETE /members/{id} 권한과 일치).
+    var canManageMembers: Bool { self == .captain }
+}
