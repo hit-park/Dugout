@@ -80,4 +80,23 @@ public struct TeamRepositoryImpl: TeamRepository {
         let dto: TeamDTO = try await client.request(endpoint)
         return dto.toDomain()
     }
+
+    public func updateMember(teamId: Int64, memberId: Int64, role: TeamRole) async throws -> TeamMember {
+        let body = UpdateMemberRequestDTO(role: role.rawValue)
+        let endpoint = APIEndpoint.json(
+            path: "/api/v1/teams/\(teamId)/members/\(memberId)",
+            method: .put,
+            body: body
+        )
+        let dto: TeamMemberDTO = try await client.request(endpoint)
+        return dto.toDomain()
+    }
+
+    public func removeMember(teamId: Int64, memberId: Int64) async throws {
+        let endpoint = APIEndpoint(
+            path: "/api/v1/teams/\(teamId)/members/\(memberId)",
+            method: .delete
+        )
+        try await client.requestVoid(endpoint)
+    }
 }

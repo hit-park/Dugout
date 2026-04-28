@@ -56,3 +56,9 @@ struct UpdateTeamRequestDTO: Encodable, Sendable {
         case lineupMode = "lineup_mode"
     }
 }
+
+/// PUT /api/v1/teams/{teamId}/members/{memberId} 요청 본문.
+/// 이번 plan 범위: role만 변경. jersey_number / positions는 후속 plan.
+struct UpdateMemberRequestDTO: Encodable, Sendable {
+    let role: String
+}

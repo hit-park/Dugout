@@ -23,6 +23,12 @@ public protocol TeamRepository: Sendable {
 
     /// 팀 정보 수정 (CAPTAIN/MANAGER 권한). 변경할 필드만 채워 보낸다.
     func updateTeam(id: Int64, request: UpdateTeamRequest) async throws -> Team
+
+    /// 멤버 역할 변경 (CAPTAIN 전용). 응답으로 최신 TeamMember.
+    func updateMember(teamId: Int64, memberId: Int64, role: TeamRole) async throws -> TeamMember
+
+    /// 멤버 추방 (CAPTAIN 전용). 백엔드는 CAPTAIN 본인 추방 거부.
+    func removeMember(teamId: Int64, memberId: Int64) async throws
 }
 
 /// 팀 생성 요청 데이터 (Domain 계층).

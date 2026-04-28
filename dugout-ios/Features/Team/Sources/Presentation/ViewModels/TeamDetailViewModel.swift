@@ -26,6 +26,9 @@ public final class TeamDetailViewModel {
     public private(set) var inviteCode: String?
     public private(set) var inviteCodeError: String?
     public private(set) var isGeneratingInviteCode: Bool = false
+    public var selectedMember: TeamMember?
+    public var memberActionError: String?
+    public private(set) var isMemberActionInFlight: Bool = false
 
     private let teamId: Int64
     private let currentUserId: Int64?
@@ -82,6 +85,56 @@ public final class TeamDetailViewModel {
             inviteCodeError = error.userMessage
         } catch {
             inviteCodeError = "초대 코드 생성에 실패했습니다"
+        }
+    }
+
+    public func isMemberActionable(_ member: TeamMember) -> Bool {
+        guard canManageMembers else { return false }
+        if member.role == .captain { return false }
+        if member.userId == currentUserId { return false }
+        return true
+    }
+
+    public func tapMember(_ member: TeamMember) {
+        guard isMemberActionable(member) else { return }
+        selectedMember = member
+    }
+
+    public func updateMemberRole(_ role: TeamRole) async {
+        guard let member = selectedMember else { return }
+        isMemberActionInFlight = true
+        defer {
+            isMemberActionInFlight = false
+            selectedMember = nil
+        }
+        do {
+            _ = try await repository.updateMember(
+                teamId: teamId,
+                memberId: member.id,
+                role: role
+            )
+            await load()
+        } catch let error as APIError {
+            memberActionError = error.userMessage
+        } catch {
+            memberActionError = "역할 변경에 실패했습니다"
+        }
+    }
+
+    public func removeMember() async {
+        guard let member = selectedMember else { return }
+        isMemberActionInFlight = true
+        defer {
+            isMemberActionInFlight = false
+            selectedMember = nil
+        }
+        do {
+            try await repository.removeMember(teamId: teamId, memberId: member.id)
+            await load()
+        } catch let error as APIError {
+            memberActionError = error.userMessage
+        } catch {
+            memberActionError = "추방에 실패했습니다"
         }
     }
 }

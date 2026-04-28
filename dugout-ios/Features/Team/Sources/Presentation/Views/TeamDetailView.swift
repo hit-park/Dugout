@@ -70,6 +70,32 @@ public struct TeamDetailView: View {
                 }
             }
         }
+        .confirmationDialog(
+            viewModel.selectedMember?.nickname ?? "",
+            isPresented: Binding(
+                get: { viewModel.selectedMember != nil },
+                set: { if !$0 { viewModel.selectedMember = nil } }
+            ),
+            presenting: viewModel.selectedMember
+        ) { _ in
+            Button("매니저로 변경")  { Task { await viewModel.updateMemberRole(.manager) } }
+            Button("회계로 변경")   { Task { await viewModel.updateMemberRole(.accountant) } }
+            Button("일반으로 변경") { Task { await viewModel.updateMemberRole(.member) } }
+            Button("추방", role: .destructive) { Task { await viewModel.removeMember() } }
+            Button("취소", role: .cancel) {}
+        }
+        .alert(
+            "오류",
+            isPresented: Binding(
+                get: { viewModel.memberActionError != nil },
+                set: { if !$0 { viewModel.memberActionError = nil } }
+            ),
+            presenting: viewModel.memberActionError
+        ) { _ in
+            Button("확인") { viewModel.memberActionError = nil }
+        } message: { error in
+            Text(error)
+        }
     }
 
     private var navigationTitle: String {
@@ -148,39 +174,15 @@ public struct TeamDetailView: View {
                 Spacer()
             }
             ForEach(members) { member in
-                DGCard {
-                    HStack(spacing: DGSpacing.md) {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle(DGColor.textSecondary)
-                        VStack(alignment: .leading, spacing: DGSpacing.xs) {
-                            HStack {
-                                Text(member.nickname)
-                                    .font(DGFont.callout)
-                                if let jersey = member.jerseyNumber {
-                                    Text("#\(jersey)")
-                                        .font(DGFont.caption)
-                                        .foregroundStyle(DGColor.textSecondary)
-                                }
-                            }
-                            HStack(spacing: DGSpacing.xs) {
-                                Text(member.role.displayName)
-                                    .font(DGFont.caption)
-                                    .padding(.horizontal, DGSpacing.xs)
-                                    .padding(.vertical, 2)
-                                    .background(DGColor.primary.opacity(0.1))
-                                    .foregroundStyle(DGColor.primary)
-                                    .clipShape(Capsule())
-                                if !member.positions.isEmpty {
-                                    Text(member.positions.joined(separator: ", "))
-                                        .font(DGFont.caption)
-                                        .foregroundStyle(DGColor.textSecondary)
-                                }
-                            }
-                        }
-                        Spacer()
+                if viewModel.isMemberActionable(member) {
+                    Button {
+                        viewModel.tapMember(member)
+                    } label: {
+                        MemberRow(member: member)
                     }
-                    .padding(DGSpacing.sm)
+                    .buttonStyle(.plain)
+                } else {
+                    MemberRow(member: member)
                 }
             }
         }
@@ -200,5 +202,46 @@ public struct TeamDetailView: View {
         codes.map { code in
             DayOfWeek(rawValue: code)?.displayName ?? code
         }.joined(separator: ", ")
+    }
+}
+
+private struct MemberRow: View {
+    let member: TeamMember
+
+    var body: some View {
+        DGCard {
+            HStack(spacing: DGSpacing.md) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(DGColor.textSecondary)
+                VStack(alignment: .leading, spacing: DGSpacing.xs) {
+                    HStack {
+                        Text(member.nickname)
+                            .font(DGFont.callout)
+                        if let jersey = member.jerseyNumber {
+                            Text("#\(jersey)")
+                                .font(DGFont.caption)
+                                .foregroundStyle(DGColor.textSecondary)
+                        }
+                    }
+                    HStack(spacing: DGSpacing.xs) {
+                        Text(member.role.displayName)
+                            .font(DGFont.caption)
+                            .padding(.horizontal, DGSpacing.xs)
+                            .padding(.vertical, 2)
+                            .background(DGColor.primary.opacity(0.1))
+                            .foregroundStyle(DGColor.primary)
+                            .clipShape(Capsule())
+                        if !member.positions.isEmpty {
+                            Text(member.positions.joined(separator: ", "))
+                                .font(DGFont.caption)
+                                .foregroundStyle(DGColor.textSecondary)
+                        }
+                    }
+                }
+                Spacer()
+            }
+            .padding(DGSpacing.sm)
+        }
     }
 }
