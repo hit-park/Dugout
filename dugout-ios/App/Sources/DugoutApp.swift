@@ -17,13 +17,12 @@ struct DugoutApp: App {
                 if isReady {
                     MainTabView(authViewModel: authViewModel)
                 } else {
-                    SplashView {
-                        isReady = true
-                    }
+                    SplashView()
                 }
             }
             .task {
                 await authViewModel.checkAuthStatus()
+                isReady = true
             }
         }
     }

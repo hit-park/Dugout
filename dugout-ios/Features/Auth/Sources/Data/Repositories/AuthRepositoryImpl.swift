@@ -63,4 +63,10 @@ public struct AuthRepositoryImpl: AuthRepository {
         }
         await tokenStore.clear()
     }
+
+    public func fetchMe() async throws -> User {
+        let endpoint = APIEndpoint(path: "/api/v1/users/me", requiresAuth: true)
+        let dto: UserDTO = try await client.request(endpoint)
+        return dto.toDomain()
+    }
 }

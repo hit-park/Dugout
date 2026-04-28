@@ -7,8 +7,6 @@ import SwiftUI
 import DugoutDesignSystem
 
 struct SplashView: View {
-    let onReady: @MainActor () -> Void
-
     var body: some View {
         VStack(spacing: DGSpacing.md) {
             Image(systemName: "baseball.diamond.bases")
@@ -20,13 +18,9 @@ struct SplashView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(DGColor.background)
-        .task {
-            try? await Task.sleep(for: .milliseconds(1200))
-            onReady()
-        }
     }
 }
 
 #Preview {
-    SplashView(onReady: {})
+    SplashView()
 }

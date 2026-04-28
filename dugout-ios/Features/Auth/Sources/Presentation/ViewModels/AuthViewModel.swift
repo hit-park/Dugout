@@ -43,7 +43,21 @@ public final class AuthViewModel {
     /// 앱 시작 시 저장된 토큰이 있는지 확인.
     public func checkAuthStatus() async {
         let authenticated = await tokenStore.isAuthenticated
-        if !authenticated {
+        guard authenticated else {
+            state = .idle
+            return
+        }
+        do {
+            let user = try await withTimeout(seconds: 5) {
+                try await self.repository.fetchMe()
+            }
+            state = .authenticated(user)
+        } catch APIError.unauthorized {
+            await tokenStore.clear()
+            state = .idle
+        } catch {
+            // timeout / 네트워크 에러 → 토큰 유지, 비로그인 진입.
+            // 다음 cold start에 자동 재시도.
             state = .idle
         }
     }

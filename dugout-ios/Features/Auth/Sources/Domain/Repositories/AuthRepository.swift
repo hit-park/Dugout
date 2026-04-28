@@ -16,4 +16,7 @@ public protocol AuthRepository: Sendable {
 
     /// 개발 전용 로그인. 백엔드 로컬 프로필에서만 동작.
     func devLogin(nickname: String) async throws -> User
+
+    /// 현재 토큰의 user 정보를 조회. 401 시 APIError.unauthorized.
+    func fetchMe() async throws -> User
 }
