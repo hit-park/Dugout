@@ -51,7 +51,9 @@ public struct CreateTeamRequest: Sendable, Equatable {
     }
 }
 
-/// 팀 정보 수정 요청 데이터 (Domain 계층). 모든 필드 optional — 변경할 필드만 채워서 보낸다.
+/// 팀 정보 수정 요청 데이터 (Domain 계층).
+/// 백엔드는 nil 필드를 "변경 안 함"으로 해석하지만, 현재 EditTeam UI는
+/// form snapshot 전체를 채워서 보낸다 (단순화된 last-write-wins 정책).
 public struct UpdateTeamRequest: Sendable, Equatable {
     public let name: String?
     public let region: String?

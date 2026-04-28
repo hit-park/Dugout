@@ -37,6 +37,8 @@ public final class EditTeamViewModel {
         self.name = team.name
         self.region = team.region
         self.division = team.division
+        // 알 수 없는 day code는 silently 무시. DayOfWeek은 ISO 7개로 고정 가정.
+        // 백엔드가 새 코드를 추가하면 PUT 시 손실되므로, 그 시점에 enum 확장 필요.
         self.activityDays = Set(team.activityDays.compactMap { DayOfWeek(rawValue: $0) })
         self.activityTime = team.activityTime ?? ""
         self.lineupMode = team.lineupMode
