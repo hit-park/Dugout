@@ -22,8 +22,10 @@ public func withTimeout<T: Sendable>(
             try await Task.sleep(for: .seconds(seconds))
             throw TimeoutError()
         }
-        let result = try await group.next()!
-        group.cancelAll()
-        return result
+        defer { group.cancelAll() }
+        for try await result in group {
+            return result
+        }
+        throw TimeoutError() // 도달 불가능: group에 task 2개 추가했으므로.
     }
 }
