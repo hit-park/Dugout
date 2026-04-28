@@ -227,6 +227,20 @@ dugout-api/
 | POST | /api/v1/auth/refresh | 토큰 갱신 (Refresh Token Rotation) |
 | DELETE | /api/v1/auth/logout | 로그아웃 (Refresh Token 무효화) |
 
+#### 사용자
+
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | /api/v1/users/me | 현재 토큰의 사용자 정보 조회 |
+
+##### GET /api/v1/users/me
+
+현재 토큰의 사용자 정보 조회. 세션 복원 / 마이페이지 보강 용도.
+
+- 인증: Bearer JWT 필수
+- 응답: 200 OK + `UserResponse { id, email, nickname, profile_img_url, provider }`
+- 에러: 401 (토큰 만료/무효), 404 (USER_NOT_FOUND — 토큰 sub가 가리키는 user가 DB에 없음)
+
 #### 팀 관리
 
 | Method | Endpoint | 설명 |
