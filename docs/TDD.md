@@ -1015,166 +1015,233 @@ class KakaoAlimtalkClient(
 
 ## 5. iOS 앱 설계
 
-### 5-1. 아키텍처: MVVM + Clean Architecture
+### 5-1. 아키텍처: MVVM + Clean Architecture (Tuist multi-module)
+
+Phase 1부터 Tuist 4.x로 모듈 분리. App 실행 타겟 + 라이브러리 모듈 5개. 각 Feature는 Domain / Data / Presentation 3-레이어.
+
+#### 모듈 구조 (Phase 1.5 시점 — 실제 구현된 부분)
 
 ```
-DugoutApp/
-├── App/
-│   ├── DugoutApp.swift
-│   └── AppDelegate.swift          # FCM, 딥링크 처리
+dugout-ios/
+├── App/                                    # 실행 타겟
+│   └── Sources/
+│       ├── DugoutApp.swift                 # @main, Splash → MainTabView 분기
+│       ├── MainTabView.swift               # 홈/마이페이지 탭
+│       ├── SplashView.swift                # 인증 복원 동안 표시 (sleep 없음)
+│       └── MyPageView.swift                # 로그인 분기 + 로그아웃
 ├── Core/
-│   ├── Network/
-│   │   ├── APIClient.swift        # URLSession async/await
-│   │   ├── APIEndpoint.swift
-│   │   ├── APIError.swift
-│   │   ├── AuthInterceptor.swift  # JWT 자동 갱신
-│   │   └── TokenStore.swift       # Keychain 저장
-│   ├── Models/                    # 공유 모델 (Sendable)
-│   │   ├── User.swift
-│   │   ├── Team.swift
-│   │   ├── Match.swift
-│   │   ├── Attendance.swift
-│   │   ├── Lineup.swift
-│   │   └── ...
-│   ├── Cache/
-│   │   └── LocalStore.swift       # SwiftData (오프라인 캐시)
-│   ├── Notification/
-│   │   ├── PushHandler.swift
-│   │   └── DeepLinkRouter.swift
-│   └── DesignSystem/
-│       ├── Theme.swift
-│       ├── Components/
-│       │   ├── DGButton.swift
-│       │   ├── DGCard.swift
-│       │   ├── DGBadge.swift
-│       │   └── DiamondView.swift  # 야구장 다이아몬드 뷰
-│       └── Extensions/
-│
+│   ├── Network/                            # DugoutCoreNetwork
+│   │   └── Sources/
+│   │       ├── APIClient.swift             # Alamofire 기반
+│   │       ├── APIEndpoint.swift
+│   │       ├── APIError.swift
+│   │       ├── AppConfig.swift
+│   │       ├── AuthInterceptor.swift       # JWT 부착 + 401 자동 refresh (actor 직렬화)
+│   │       ├── JSONCoder.swift             # SNAKE_CASE + LocalDateTime fractional 폴백
+│   │       ├── TokenStore.swift            # actor + UserDefaults
+│   │       └── Concurrency.swift           # withTimeout / TimeoutError
+│   └── DesignSystem/                       # DugoutDesignSystem
+│       └── Sources/
+│           ├── Theme.swift                 # DGColor / DGFont / DGSpacing
+│           └── Components/                 # DGButton / DGCard 등
 ├── Features/
-│   ├── Auth/
-│   │   ├── AuthView.swift
-│   │   ├── AuthViewModel.swift
-│   │   ├── OnboardingView.swift
-│   │   └── AuthRepository.swift
-│   │
-│   ├── Home/
-│   │   ├── HomeView.swift         # 메인 대시보드
-│   │   ├── HomeViewModel.swift
-│   │   ├── NextMatchCard.swift    # 다음 경기 카드
-│   │   ├── AIInsightCard.swift    # AI 인사이트
-│   │   └── TeamNoticeCard.swift
-│   │
-│   ├── Schedule/
-│   │   ├── ScheduleView.swift     # 캘린더 뷰
-│   │   ├── MatchDetailView.swift
-│   │   ├── CreateMatchView.swift
-│   │   ├── ScheduleViewModel.swift
-│   │   └── ScheduleRepository.swift
-│   │
-│   ├── Attendance/
-│   │   ├── AttendanceView.swift   # 출석 투표 & 현황
-│   │   ├── AttendancePredictionView.swift  # AI 예측
-│   │   ├── AttendanceViewModel.swift
-│   │   └── AttendanceRepository.swift
-│   │
-│   ├── Lineup/
-│   │   ├── LineupView.swift       # 라인업 뷰
-│   │   ├── LineupEditorView.swift # 드래그&드롭 편집
-│   │   ├── DiamondLineupView.swift # 다이아몬드 시각화
-│   │   ├── BattingOrderView.swift # 타순 뷰
-│   │   ├── LineupViewModel.swift
-│   │   └── LineupRepository.swift
-│   │
-│   ├── Finance/
-│   │   ├── FinanceDashboardView.swift
-│   │   ├── FeeDetailView.swift
-│   │   ├── CreateFeeView.swift
-│   │   ├── FinanceViewModel.swift
-│   │   └── FinanceRepository.swift
-│   │
-│   ├── Matching/
-│   │   ├── MatchingHomeView.swift
-│   │   ├── CreateMatchRequestView.swift
-│   │   ├── MatchRecommendView.swift  # AI 추천 리스트
-│   │   ├── MatchingViewModel.swift
-│   │   └── MatchingRepository.swift
-│   │
-│   ├── Mercenary/
-│   │   ├── MercenaryHomeView.swift
-│   │   ├── MercenaryProfileView.swift
-│   │   ├── MercenaryRequestView.swift
-│   │   ├── MercenaryViewModel.swift
-│   │   └── MercenaryRepository.swift
-│   │
-│   ├── Ground/
-│   │   ├── GroundMapView.swift
-│   │   ├── GroundDetailView.swift
-│   │   ├── GroundViewModel.swift
-│   │   └── GroundRepository.swift
-│   │
-│   ├── Team/
-│   │   ├── TeamHomeView.swift
-│   │   ├── MemberListView.swift
-│   │   ├── TeamSettingsView.swift
-│   │   ├── InviteView.swift
-│   │   ├── TeamViewModel.swift
-│   │   └── TeamRepository.swift
-│   │
-│   └── Settings/
-│       ├── SettingsView.swift
-│       ├── NotificationSettingsView.swift
-│       └── ProfileEditView.swift
-│
-└── Resources/
-    ├── Assets.xcassets
-    └── Localizable.strings
+│   ├── Auth/                               # DugoutAuthFeature
+│   │   └── Sources/
+│   │       ├── Domain/
+│   │       │   ├── Entities/User.swift              # User + AuthProvider(.displayName)
+│   │       │   └── Repositories/AuthRepository.swift
+│   │       ├── Data/
+│   │       │   ├── DTOs/AuthDTO.swift               # AuthResponseDTO / UserDTO / DevLoginRequestDTO
+│   │       │   └── Repositories/AuthRepositoryImpl.swift
+│   │       └── Presentation/
+│   │           ├── ViewModels/AuthViewModel.swift   # @MainActor @Observable, checkAuthStatus
+│   │           └── Views/
+│   │               ├── AuthView.swift               # OAuth 진입 (Phase 2 통합 대기)
+│   │               └── LoginSheet.swift             # Deferred auth 공용 시트 (dev-login)
+│   ├── Home/                               # DugoutHomeFeature
+│   │   └── Sources/
+│   │       ├── Domain/
+│   │       │   ├── Entities/MyTeam.swift
+│   │       │   └── Repositories/HomeRepository.swift
+│   │       ├── Data/
+│   │       │   ├── DTOs/MyTeamDTO.swift
+│   │       │   └── Repositories/HomeRepositoryImpl.swift
+│   │       └── Presentation/
+│   │           ├── ViewModels/HomeViewModel.swift   # PendingAction / PresentedSheet
+│   │           └── Views/HomeView.swift             # NavigationStack + Deferred auth + .id 재생성
+│   └── Team/                               # DugoutTeamFeature
+│       └── Sources/
+│           ├── Domain/
+│           │   ├── Entities/
+│           │   │   ├── Team.swift                   # Team + LineupMode
+│           │   │   ├── TeamMember.swift             # TeamMember + TeamRole + 권한 extension
+│           │   │   └── DayOfWeek.swift              # 요일 enum + displayName
+│           │   └── Repositories/TeamRepository.swift # CreateTeamRequest / UpdateTeamRequest 포함
+│           ├── Data/
+│           │   ├── DTOs/                            # snake_case CodingKeys, fractional Date
+│           │   │   ├── TeamDTO.swift
+│           │   │   ├── TeamMemberDTO.swift
+│           │   │   └── TeamRequestDTO.swift         # Create/Update/Join/UpdateMember/InviteCode
+│           │   └── Repositories/TeamRepositoryImpl.swift
+│           └── Presentation/
+│               ├── ViewModels/
+│               │   ├── CreateTeamViewModel.swift
+│               │   ├── EditTeamViewModel.swift
+│               │   ├── JoinTeamViewModel.swift
+│               │   └── TeamDetailViewModel.swift    # invite + member 관리 + load 통합
+│               └── Views/
+│                   ├── CreateTeamView.swift
+│                   ├── EditTeamView.swift
+│                   ├── JoinTeamView.swift
+│                   └── TeamDetailView.swift         # 편집 sheet + ConfirmationDialog
+└── Project.swift                           # Tuist manifest (모듈 의존성 그래프)
 ```
 
-### 5-2. 네트워크 레이어 (Swift 6 Concurrency)
+#### 의존성 그래프
+
+```
+App
+├── DugoutAuthFeature
+├── DugoutHomeFeature
+└── DugoutTeamFeature
+
+DugoutAuthFeature
+├── DugoutCoreNetwork
+└── DugoutDesignSystem
+
+DugoutHomeFeature
+├── DugoutCoreNetwork
+├── DugoutDesignSystem
+├── DugoutAuthFeature       # AuthViewModel 환경 + LoginSheet 사용
+└── DugoutTeamFeature       # NavigationLink → TeamDetailView
+
+DugoutTeamFeature
+├── DugoutCoreNetwork
+└── DugoutDesignSystem
+```
+
+다음 페이즈에 추가될 모듈(Schedule / Attendance / Lineup / Finance / Matching / Mercenary / Ground / Settings 등)은 같은 Feature 단위 패턴(Domain / Data / Presentation)으로 신설. CoreNetwork + DesignSystem은 모든 Feature가 직접 의존하고, 다른 Feature에 의존할 때만 추가 엣지로 명시.
+
+#### 레이어별 책임
+
+| 레이어 | 책임 | 예시 |
+|---|---|---|
+| Domain | 순수 도메인 모델, Repository 프로토콜, 권한 헬퍼 | Team, TeamMember(+권한 extension), AuthRepository |
+| Data | API/DB 매핑, Repository 구현 | AuthDTO, TeamRepositoryImpl |
+| Presentation | ViewModel + View, SwiftUI lifecycle | TeamDetailViewModel + TeamDetailView |
+| App | 진입점, MainTabView, 비-Feature 잡뷰 | DugoutApp, MyPageView |
+
+#### Swift 6 Strict Concurrency
+
+- ViewModel: `@MainActor @Observable public final class`. State enum은 `Sendable`.
+- Repository protocol: `: Sendable`. 구현체는 `struct + Sendable`.
+- DTO: `Encodable / Decodable, Sendable`.
+- TokenStore: `actor`로 토큰 동시 접근 직렬화.
+- 모든 cross-actor 통신은 `async/await` + `Sendable` 파라미터.
+- `withTimeout` 헬퍼는 `T: Sendable` 제약 + `@Sendable` closure 요구.
+
+### 5-2. 네트워크 레이어 (Alamofire + AuthInterceptor)
+
+Phase 1부터 Alamofire 기반. (1) JWT 자동 부착, (2) 401 자동 refresh + 동시다발 401에 대한 actor 직렬화, (3) snake_case 매핑, (4) LocalDateTime fractional seconds 디코딩 폴백을 모두 지원.
+
+#### APIClient
 
 ```swift
-// APIClient.swift — Swift 6 Strict Concurrency 준수
-final class APIClient: Sendable {
-    static let shared = APIClient()
-
-    private let session: URLSession
+public final class APIClient: @unchecked Sendable {
+    public static let shared = APIClient()
+    private let session: Session
     private let baseURL: URL
-    private let tokenStore: TokenStore
+    private let decoder = JSONDecoder.dugoutDefault
+    private let encoder = JSONEncoder.dugoutDefault
 
-    func request<T: Decodable & Sendable>(
-        _ endpoint: APIEndpoint
-    ) async throws -> T {
-        var req = URLRequest(url: baseURL.appending(path: endpoint.path))
-        req.httpMethod = endpoint.method.rawValue
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    public init(
+        baseURL: URL = AppConfig.apiBaseURL,
+        interceptor: (any RequestInterceptor)? = AuthInterceptor()
+    ) {
+        // URLSessionConfiguration: timeoutForRequest=15s, timeoutForResource=30s
+        // Alamofire Session에 interceptor를 주입 → 모든 요청에 adapt/retry 적용
+        ...
+    }
 
-        // JWT 토큰 삽입
-        if let token = await tokenStore.accessToken {
-            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    public func request<T: Decodable & Sendable>(_ endpoint: APIEndpoint) async throws -> T {
+        let task = makeDataRequest(endpoint)
+            .validate(statusCode: 200..<300)
+            .serializingDecodable(T.self, decoder: decoder)
+        let response = await task.response
+        switch response.result {
+        case .success(let value): return value
+        case .failure(let af):    throw APIError.from(af, data: response.data, decoder: decoder)
         }
+    }
 
-        if let body = endpoint.body {
-            req.httpBody = try JSONEncoder().encode(body)
-        }
-
-        let (data, response) = try await session.data(for: req)
-        let httpResponse = response as! HTTPURLResponse
-
-        // 401 → 토큰 갱신 후 재시도
-        if httpResponse.statusCode == 401 {
-            try await refreshToken()
-            return try await request(endpoint)
-        }
-
-        guard (200...299).contains(httpResponse.statusCode) else {
-            let error = try JSONDecoder().decode(APIErrorResponse.self, from: data)
-            throw APIError.server(error)
-        }
-
-        return try JSONDecoder().decode(T.self, from: data)
+    public func requestVoid(_ endpoint: APIEndpoint) async throws {
+        // 200/204 응답에서 빈 본문 허용 (DELETE 등)
     }
 }
 ```
+
+#### AuthInterceptor
+
+```swift
+public final class AuthInterceptor: RequestInterceptor, @unchecked Sendable {
+    public func adapt(_ urlRequest: URLRequest, ...) {
+        // X-Skip-Auth 헤더가 있으면 토큰 부착 생략 (로그인 / refresh 자체에 사용)
+        // 그 외에는 tokenStore.accessToken을 Bearer로 부착
+    }
+
+    public func retry(_ request: Request, ...) {
+        // 401 + retryCount < 1 → TokenRefresher.refreshIfNeeded() actor 호출
+        // 성공 → .retry, 실패 → .doNotRetryWithError(APIError.unauthorized)
+    }
+}
+
+public actor TokenRefresher {
+    // inflight task를 공유해 동시다발 401에 refresh가 한 번만 일어나도록 직렬화
+}
+```
+
+#### JSON 직렬화 정책
+
+```swift
+extension JSONDecoder {
+    static var dugoutDefault: JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601WithFractionalSeconds
+        return decoder
+    }
+}
+```
+
+- 백엔드 Spring Boot Jackson `property-naming-strategy: SNAKE_CASE` 설정과 일치하기 위해 모델은 명시적 `CodingKeys`를 선언 (`profile_img_url`, `lineup_mode` 등).
+- `iso8601WithFractionalSeconds` 디코더는 다음 4가지를 모두 처리:
+  1. ISO 8601 with timezone (`2026-04-21T10:15:30Z`)
+  2. ISO 8601 with fractional seconds + timezone (`...30.123Z`)
+  3. timezone 없는 LocalDateTime (`2026-04-21T10:15:30`)
+  4. timezone 없는 LocalDateTime + fractional seconds (`...30.207305000`) — fractional 부분을 잘라낸 뒤 LocalDateTime 포맷으로 재시도
+
+(4) 폴백은 Spring Boot 3.x + jackson-datatype-jsr310의 LocalDateTime 기본 직렬화가 nano-seconds까지 포함하기 때문에 추가됐다.
+
+#### withTimeout
+
+```swift
+public func withTimeout<T: Sendable>(
+    seconds: TimeInterval,
+    _ operation: @escaping @Sendable () async throws -> T
+) async throws -> T {
+    try await withThrowingTaskGroup(of: T.self) { group in
+        group.addTask { try await operation() }
+        group.addTask {
+            try await Task.sleep(for: .seconds(seconds))
+            throw TimeoutError()
+        }
+        defer { group.cancelAll() }
+        for try await result in group { return result }
+        throw TimeoutError()
+    }
+}
+```
+
+장기 응답이 우려되는 호출(예: 세션 rehydration의 `fetchMe`)에 5초 cap을 씌우는 데 사용. APIClient의 transport timeout(15초)보다 짧게 잡아 UX 측면 가드 역할.
 
 ### 5-3. 핵심 UI 컴포넌트
 
@@ -1231,6 +1298,128 @@ struct DiamondLineupView: View {
     }
 }
 ```
+
+### 5-4. Deferred Auth 패턴
+
+비로그인 상태에서도 메인 진입을 허용하고, 인증이 필요한 액션(팀 만들기 / 가입)을 사용자가 시도한 시점에 LoginSheet을 띄운다. 로그인이 성공하면 의도한 액션 시트로 자연스럽게 이어준다.
+
+#### 흐름
+
+```
+1. 비로그인 사용자가 [팀 만들기] 탭
+   → HomeViewModel.tapCreateTeam(isAuthenticated: false)
+   → pendingAction = .createTeam, presentedSheet = .login
+
+2. SwiftUI .sheet(item: $presentedSheet)이 LoginSheet 표시
+
+3. 사용자가 dev-login 또는 OAuth 완료
+   → AuthViewModel.state = .authenticated(user) → isAuthenticated = true
+   → LoginSheet의 onChange(of: isAuthenticated) → dismiss()
+   → presentedSheet = nil → SwiftUI sheet dismiss 시작
+
+4. SwiftUI dismiss 애니메이션 완료 → onDismiss 콜백 fire
+   → HomeViewModel.onSheetDismissed(isAuthenticated: true)
+   → pendingAction이 .createTeam → presentedSheet = .createTeam
+   → 새 sheet (CreateTeamView)이 자연스럽게 swap
+
+비로그인 상태로 LoginSheet을 닫으면(취소):
+   → isAuthenticated = false → onSheetDismissed가 pendingAction = nil로 정리
+```
+
+#### 핵심 디자인 결정
+
+**왜 onChange가 아니라 onDismiss로 swap?** LoginSheet의 self-dismiss와 외부 sheet swap이 같은 SwiftUI transaction에서 발생하면 sheet binding을 nil → 다른 enum case로 빠르게 set하게 된다. SwiftUI는 nil 변경을 dismiss-animation 트리거로 해석해서 직후의 set을 무시한다. onDismiss는 dismiss 애니메이션 완료 후 호출되므로 이 race가 없다.
+
+**단일 sheet item 패턴.** HomeView는 `.sheet(item: $viewModel.presentedSheet)` 단일 sheet에 enum case로 분기 (`.createTeam / .joinTeam / .login`). 한 번에 하나의 sheet만 표시되며 swap을 enum case 변경으로 표현해 SwiftUI가 transition을 매끄럽게 처리.
+
+**ConfirmationDialog의 member 인자 capture.** 멤버 관리 액션도 비슷한 race를 갖는다. `isPresented` binding setter가 button action보다 먼저 실행되어 `selectedMember`를 nil로 set한다. 해결책: actions closure가 받은 `member` 인자를 button action에 직접 전달해 closure capture로 살린다.
+
+```swift
+.confirmationDialog(
+    selectedMember?.nickname ?? "",
+    isPresented: dialogBinding,
+    presenting: viewModel.selectedMember
+) { member in   // ← 여기 member는 dialog 표시 시점에 capture됨
+    Button("매니저로 변경") { Task { await vm.updateMemberRole(.manager, member: member) } }
+    Button("추방", role: .destructive) { Task { await vm.removeMember(member) } }
+    Button("취소", role: .cancel) {}
+}
+```
+
+ViewModel은 `selectedMember`에 의존하지 않고 명시적 `member` 인자를 받는 메서드를 노출.
+
+### 5-5. 권한 매트릭스 (도메인 enum extension)
+
+권한 정책을 도메인 enum의 computed property에 응집. View / ViewModel은 이 helper만 본다. 백엔드 권한 매트릭스(`requireTeamRole(...)`)와 1:1 매칭.
+
+```swift
+public extension TeamRole {
+    var canEditTeam: Bool       { self == .captain || self == .manager }  // PUT /teams/{id}
+    var canShowInviteCode: Bool { self == .captain || self == .manager }  // POST /teams/{id}/invite
+    var canManageMembers: Bool  { self == .captain }                      // PUT/DELETE /members/{id}
+}
+```
+
+ViewModel에서 nil-coalescing으로 비로그인 / 비멤버 fallback:
+
+```swift
+public var canEditTeam: Bool       { myRole?.canEditTeam ?? false }
+public var canShowInviteCode: Bool { myRole?.canShowInviteCode ?? false }
+public var canManageMembers: Bool  { myRole?.canManageMembers ?? false }
+```
+
+#### 액션별 비활성 규칙
+
+- **팀 정보 수정**: `viewModel.canEditTeam == false` 또는 state != `.loaded` → toolbar 편집 버튼 미표시
+- **초대 코드 영역**: `viewModel.canShowInviteCode == false` → 카드 자체 미렌더
+- **멤버 row 액션**: 다음 셋 모두 만족 시에만 actionable
+  - `canManageMembers == true`
+  - `member.role != .captain` (CAPTAIN 강등 / 추방 불가)
+  - `member.userId != currentUserId` (자기 자신 비활성)
+
+비활성 row는 Button wrap 없이 그대로 표시 — 시각 dim 없이 "탭 무반응"이 자연스럽다. 백엔드(`requireTeamRole(...)`)가 마지막 게이트로 동작하므로 defense-in-depth가 보장된다.
+
+### 5-6. 세션 rehydration
+
+앱 cold start 시 토큰이 살아있으면 user 정보를 받아 인증 상태를 자동 복원.
+
+#### 흐름
+
+```
+DugoutApp.task
+  └→ await authViewModel.checkAuthStatus()
+        ├ tokenStore.isAuthenticated == false → state = .idle, return
+        └ token 있음 → withTimeout(5) { fetchMe() }
+              ├ 성공 → state = .authenticated(user)
+              ├ APIError.unauthorized → tokenStore.clear() + state = .idle
+              └ timeout / 네트워크 → state = .idle (토큰 유지, 다음 cold start에 재시도)
+  → 끝나면 isReady = true → MainTabView 진입
+```
+
+SplashView는 sleep을 두지 않는다. 응답 도착 시점이 곧 진입 시점. 보통 100~500ms이라 cold start UX가 빠르고, 5초 timeout 시 비로그인 진입.
+
+#### 백엔드 endpoint
+
+`GET /api/v1/users/me`는 인증 토큰의 사용자 정보를 반환한다. AuthService(인증 액션)와 분리된 UserController / UserService에 위치.
+
+#### 토큰 정리 정책
+
+| 분기 | 토큰 처리 | state |
+|---|---|---|
+| 401 Unauthorized (refresh 실패 포함) | `TokenStore.clear()` | `.idle`, 재로그인 유도 |
+| timeout / 네트워크 에러 | 유지 | `.idle`, 다음 cold start 재시도 |
+| 클라이언트 명시 로그아웃 | `TokenStore.clear()` | `.idle` |
+
+#### NavigationStack 재생성
+
+홈 탭의 NavigationStack은 인증 상태에 묶여 재생성된다.
+
+```swift
+NavigationStack { content }
+    .id(authViewModel.isAuthenticated)
+```
+
+로그아웃 시 stack 통째로 새로 만들어져 push된 TeamDetailView 등이 자동으로 사라진다. HomeView의 `@State viewModel`은 상위 view의 state라 영향받지 않으므로 다시 로그인 시 팀 목록 로드 결과는 보존된다.
 
 ---
 
