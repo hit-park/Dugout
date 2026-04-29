@@ -77,11 +77,11 @@ public struct TeamDetailView: View {
                 set: { if !$0 { viewModel.selectedMember = nil } }
             ),
             presenting: viewModel.selectedMember
-        ) { _ in
-            Button("매니저로 변경")  { Task { await viewModel.updateMemberRole(.manager) } }
-            Button("회계로 변경")   { Task { await viewModel.updateMemberRole(.accountant) } }
-            Button("일반으로 변경") { Task { await viewModel.updateMemberRole(.member) } }
-            Button("추방", role: .destructive) { Task { await viewModel.removeMember() } }
+        ) { member in
+            Button("매니저로 변경")  { Task { await viewModel.updateMemberRole(.manager, member: member) } }
+            Button("회계로 변경")   { Task { await viewModel.updateMemberRole(.accountant, member: member) } }
+            Button("일반으로 변경") { Task { await viewModel.updateMemberRole(.member, member: member) } }
+            Button("추방", role: .destructive) { Task { await viewModel.removeMember(member) } }
             Button("취소", role: .cancel) {}
         }
         .alert(

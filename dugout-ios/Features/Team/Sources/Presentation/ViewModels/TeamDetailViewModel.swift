@@ -100,13 +100,13 @@ public final class TeamDetailViewModel {
         selectedMember = member
     }
 
-    public func updateMemberRole(_ role: TeamRole) async {
-        guard !isMemberActionInFlight, let member = selectedMember else { return }
+    /// ConfirmationDialog의 actions closure가 받은 member를 직접 인자로 받는다.
+    /// dialog dismiss 시 isPresented binding이 selectedMember를 nil로 set하기 때문에
+    /// selectedMember에 의존하면 button action 시점에 nil인 race가 발생한다.
+    public func updateMemberRole(_ role: TeamRole, member: TeamMember) async {
+        guard !isMemberActionInFlight else { return }
         isMemberActionInFlight = true
-        defer {
-            isMemberActionInFlight = false
-            selectedMember = nil
-        }
+        defer { isMemberActionInFlight = false }
         do {
             _ = try await repository.updateMember(
                 teamId: teamId,
@@ -121,13 +121,10 @@ public final class TeamDetailViewModel {
         }
     }
 
-    public func removeMember() async {
-        guard !isMemberActionInFlight, let member = selectedMember else { return }
+    public func removeMember(_ member: TeamMember) async {
+        guard !isMemberActionInFlight else { return }
         isMemberActionInFlight = true
-        defer {
-            isMemberActionInFlight = false
-            selectedMember = nil
-        }
+        defer { isMemberActionInFlight = false }
         do {
             try await repository.removeMember(teamId: teamId, memberId: member.id)
             await load()
