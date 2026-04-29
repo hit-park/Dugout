@@ -27,6 +27,9 @@ public struct HomeView: View {
                 .navigationTitle("내 팀")
                 .toolbar { toolbarContent }
         }
+        // 로그아웃 시 NavigationStack을 통째로 재생성해 push된 TeamDetailView가
+        // 비로그인 상태에서 잔존하지 않도록 identity를 인증 상태에 묶는다.
+        .id(authViewModel.isAuthenticated)
         .task {
             if authViewModel.isAuthenticated {
                 await viewModel.loadTeams()
