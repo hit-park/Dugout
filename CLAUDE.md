@@ -136,6 +136,8 @@ dugout/
 | 부수 | Division | 실력 등급 (1부~4부) |
 | 레이팅 | Rating | ELO 기반 팀 실력 점수 |
 
+> 영문 식별자만 사용. 자유 번역·로마자·임의 약어 금지. 자세한 가드는 [`.claude/skills/dugout-glossary`](.claude/skills/dugout-glossary/SKILL.md) 참고.
+
 ## 포지션 코드
 
 P(투수), C(포수), 1B(1루수), 2B(2루수), 3B(3루수), SS(유격수), LF(좌익수), CF(중견수), RF(우익수), DH(지명타자)
