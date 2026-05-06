@@ -42,6 +42,8 @@ com.dugout.api/
 
 ## 새 도메인 추가 절차 (체크리스트)
 
+> 자동화: `/new-api {도메인}` 슬래시 명령이 1~5번을 처리한다. ErrorCode 한글 메시지·TDD.md 갱신은 사용자 승인 단계로 격리됨.
+
 1. `domain/{새도메인}/` 아래 5폴더 생성: `controller`, `service`, `repository`, `entity`, `dto`
 2. Entity는 `BaseEntity` 상속 (createdAt, updatedAt, deletedAt 자동 관리)
 3. Repository는 `JpaRepository<T, Long>` 상속
