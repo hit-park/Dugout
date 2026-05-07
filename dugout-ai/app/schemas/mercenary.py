@@ -2,8 +2,9 @@ from pydantic import BaseModel, Field
 
 
 class MercenaryCandidate(BaseModel):
+    """식별자만 전달 — PII(닉네임 등)는 dugout-api 응답 매핑 단계에서만 사용."""
+
     user_id: int
-    nickname: str
     regions: list[str] = Field(default_factory=list)
     positions: list[str] = Field(default_factory=list)
     available_days: list[str] = Field(default_factory=list)
@@ -21,7 +22,6 @@ class MercenaryRecommendRequest(BaseModel):
 
 class MercenaryMatch(BaseModel):
     user_id: int
-    nickname: str
     score: float = Field(ge=0.0, le=100.0)
     matched_positions: list[str]
     matched_regions: list[str]

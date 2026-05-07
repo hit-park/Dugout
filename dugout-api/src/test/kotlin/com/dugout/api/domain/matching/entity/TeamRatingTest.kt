@@ -1,9 +1,12 @@
 package com.dugout.api.domain.matching.entity
 
 import com.dugout.api.domain.team.entity.Team
+import com.dugout.api.global.error.BusinessException
+import com.dugout.api.global.error.ErrorCode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class TeamRatingTest {
 
@@ -65,13 +68,12 @@ class TeamRatingTest {
     }
 
     @Test
-    fun `applyResult - 잘못된 result값이면 IllegalArgumentException`() {
+    fun `applyResult - 잘못된 result값이면 BusinessException(INVALID_MATCH_RESULT)`() {
         val rating = TeamRating(team = teamWithDivision(3), eloRating = 1200)
-        try {
+
+        val exception = assertThrows<BusinessException> {
             rating.applyResult(opponentElo = 1200, result = 0.7)
-            error("예외가 발생해야 합니다")
-        } catch (e: IllegalArgumentException) {
-            assertTrue(e.message!!.contains("result"))
         }
+        assertEquals(ErrorCode.INVALID_MATCH_RESULT, exception.errorCode)
     }
 }

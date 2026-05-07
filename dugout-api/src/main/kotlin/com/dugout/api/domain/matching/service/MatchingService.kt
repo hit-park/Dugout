@@ -202,11 +202,12 @@ class MatchingService(
     }
 
     /**
-     * Phase 1 추천 stub: dugout-ai 미가용 시 단순 ELO 차이 기반 정렬.
-     * Phase 2에서 가중 스코어(skill 40 + distance 25 + time 20 + manner 15)로 교체.
+     * 단순 ELO 차이 기반 정렬 (가중 스코어는 proposal 생성 시점에 dugout-ai로 산출).
+     * 요청팀 경영진(CAPTAIN/MANAGER)만 호출 가능 — 다른 팀이 후보 풀 미리보기 차단.
      */
-    fun recommendOpponents(requestId: Long): List<TeamRatingResponse> {
+    fun recommendOpponents(userId: Long, requestId: Long): List<TeamRatingResponse> {
         val request = findRequest(requestId)
+        requireTeamManagement(request.team.id, userId)
         val myRating = teamRatingRepository.findByTeamId(request.team.id)
             ?: throw BusinessException(ErrorCode.TEAM_RATING_NOT_FOUND)
 

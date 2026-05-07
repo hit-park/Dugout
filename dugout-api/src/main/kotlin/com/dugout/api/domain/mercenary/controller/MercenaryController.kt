@@ -96,7 +96,8 @@ class MercenaryController(
 
     @GetMapping("/mercenary/requests/{requestId}/recommend")
     fun recommendCandidates(
+        @AuthenticationPrincipal userId: Long,
         @PathVariable requestId: Long,
     ): ResponseEntity<List<MercenaryProfileResponse>> =
-        ResponseEntity.ok(mercenaryService.recommendCandidates(requestId))
+        ResponseEntity.ok(mercenaryService.recommendCandidates(userId, requestId))
 }

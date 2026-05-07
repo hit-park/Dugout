@@ -188,6 +188,7 @@ class MercenaryServiceTest {
     @Test
     fun `추천 - dugout-ai 응답 user_id 순서대로 프로필 매핑`() {
         val team = sampleTeam()
+        val captain = TeamMember.create(team, sampleUser("주장"), TeamRole.CAPTAIN)
         val matchedUser = sampleUser("매치O")
         val request = MercenaryRequest.create(
             team = team,
@@ -201,6 +202,7 @@ class MercenaryServiceTest {
         }
 
         whenever(requestRepository.findById(request.id)).thenReturn(Optional.of(request))
+        whenever(teamMemberRepository.findByTeamIdAndUserId(team.id, 1L)).thenReturn(captain)
         whenever(profileRepository.findAllByIsActiveTrue()).thenReturn(listOf(matched))
         whenever(dugoutAiClient.recommendMercenary(any())).thenReturn(
             AiMercenaryRecommendResponse(
@@ -208,7 +210,6 @@ class MercenaryServiceTest {
                 matches = listOf(
                     AiMercenaryMatch(
                         userId = matchedUser.id,
-                        nickname = matchedUser.nickname,
                         score = 80.0,
                         matchedPositions = listOf("P"),
                         matchedRegions = listOf("서울 강남"),
@@ -217,9 +218,29 @@ class MercenaryServiceTest {
             ),
         )
 
-        val recommended = service.recommendCandidates(request.id)
+        val recommended = service.recommendCandidates(1L, request.id)
 
         assertEquals(1, recommended.size)
         assertEquals("매치O", recommended[0].nickname)
+    }
+
+    @Test
+    fun `추천 - 요청팀 경영진이 아니면 TEAM_ROLE_NOT_ALLOWED`() {
+        val team = sampleTeam()
+        val member = TeamMember.create(team, sampleUser(), TeamRole.MEMBER)
+        val request = MercenaryRequest.create(
+            team = team,
+            matchId = 1L,
+            neededPositions = listOf("P"),
+            neededCount = 1,
+        )
+
+        whenever(requestRepository.findById(request.id)).thenReturn(Optional.of(request))
+        whenever(teamMemberRepository.findByTeamIdAndUserId(team.id, 1L)).thenReturn(member)
+
+        val exception = assertThrows<BusinessException> {
+            service.recommendCandidates(1L, request.id)
+        }
+        assertEquals(ErrorCode.TEAM_ROLE_NOT_ALLOWED, exception.errorCode)
     }
 }

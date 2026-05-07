@@ -167,17 +167,18 @@ class MercenaryService(
 
     /**
      * dugout-ai에 활성 프로필 후보를 보내고 가중 스코어 기반 추천을 받는다.
-     * 응답의 user_id 순서대로 프로필을 매핑해서 반환.
+     * 모집팀 경영진(CAPTAIN/MANAGER)만 호출 가능 — 다른 팀이 후보 풀을 엿보는 것을 차단.
      */
-    fun recommendCandidates(requestId: Long): List<MercenaryProfileResponse> {
+    fun recommendCandidates(userId: Long, requestId: Long): List<MercenaryProfileResponse> {
         val request = findRequest(requestId)
+        requireTeamManagement(request.team.id, userId)
         val activeProfiles = profileRepository.findAllByIsActiveTrue()
         if (activeProfiles.isEmpty()) return emptyList()
 
+        // PII(닉네임)는 dugout-ai로 전달하지 않는다 — user_id 기반 식별만.
         val candidates = activeProfiles.map { profile ->
             AiMercenaryCandidate(
                 userId = profile.user.id,
-                nickname = profile.user.nickname,
                 regions = profile.regions,
                 positions = profile.positions,
                 availableDays = profile.availableDays,

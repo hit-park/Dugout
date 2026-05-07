@@ -2,6 +2,8 @@ package com.dugout.api.domain.matching.entity
 
 import com.dugout.api.domain.team.entity.Team
 import com.dugout.api.global.common.BaseEntity
+import com.dugout.api.global.error.BusinessException
+import com.dugout.api.global.error.ErrorCode
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -44,7 +46,9 @@ class TeamRating(
      * @param result 1.0(승), 0.5(무), 0.0(패)
      */
     fun applyResult(opponentElo: Int, result: Double) {
-        require(result in setOf(0.0, 0.5, 1.0)) { "result must be 0.0/0.5/1.0" }
+        if (result !in setOf(0.0, 0.5, 1.0)) {
+            throw BusinessException(ErrorCode.INVALID_MATCH_RESULT)
+        }
         val expected = 1.0 / (1.0 + 10.0.pow((opponentElo - eloRating) / 400.0))
         eloRating = (eloRating + K * (result - expected)).roundToInt()
         when (result) {

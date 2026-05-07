@@ -46,7 +46,6 @@ def recommend(req: MercenaryRecommendRequest) -> MercenaryRecommendResponse:
         matches.append(
             MercenaryMatch(
                 user_id=cand.user_id,
-                nickname=cand.nickname,
                 score=total,
                 matched_positions=sorted(matched_pos),
                 matched_regions=sorted(matched_regions),

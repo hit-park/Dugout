@@ -5,10 +5,10 @@ from app.main import app
 client = TestClient(app)
 
 
-def _candidate(user_id: int, nickname: str, positions, regions, rating=4.0):
+def _candidate(user_id: int, _label: str, positions, regions, rating=4.0):
+    """_label은 테스트 가독성용. dugout-ai에는 PII를 보내지 않으므로 페이로드에 포함 안 됨."""
     return {
         "user_id": user_id,
-        "nickname": nickname,
         "positions": positions,
         "regions": regions,
         "available_days": ["SAT", "SUN"],

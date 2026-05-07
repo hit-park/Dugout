@@ -82,9 +82,12 @@ data class AiMatchingScoreResponse(
 
 // ─── Mercenary ───────────────────────────────────────────────────────────────
 
+/**
+ * dugout-ai로 보내는 후보. PII(닉네임 등)는 절대 미포함 — user_id 만 식별자로 사용.
+ * 응답을 받은 뒤 dugout-api 쪽에서 user_id → 닉네임 매핑.
+ */
 data class AiMercenaryCandidate(
     val userId: Long,
-    val nickname: String,
     val regions: List<String> = emptyList(),
     val positions: List<String> = emptyList(),
     val availableDays: List<String> = emptyList(),
@@ -102,7 +105,6 @@ data class AiMercenaryRecommendRequest(
 
 data class AiMercenaryMatch(
     val userId: Long,
-    val nickname: String,
     val score: Double,
     val matchedPositions: List<String>,
     val matchedRegions: List<String>,

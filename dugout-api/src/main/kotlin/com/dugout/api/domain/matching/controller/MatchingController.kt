@@ -89,9 +89,10 @@ class MatchingController(
 
     @GetMapping("/requests/{requestId}/recommend")
     fun recommend(
+        @AuthenticationPrincipal userId: Long,
         @PathVariable requestId: Long,
     ): ResponseEntity<List<TeamRatingResponse>> =
-        ResponseEntity.ok(matchingService.recommendOpponents(requestId))
+        ResponseEntity.ok(matchingService.recommendOpponents(userId, requestId))
 
     @GetMapping("/teams/{teamId}/rating")
     fun getRating(@PathVariable teamId: Long): ResponseEntity<TeamRatingResponse> =
