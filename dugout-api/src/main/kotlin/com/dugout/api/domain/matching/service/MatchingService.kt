@@ -18,6 +18,8 @@ import com.dugout.api.domain.team.entity.Team
 import com.dugout.api.domain.team.entity.TeamRole
 import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.team.repository.TeamRepository
+import com.dugout.api.global.ai.AiMatchingScoreRequest
+import com.dugout.api.global.ai.DugoutAiClient
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
 import org.springframework.stereotype.Service
@@ -32,6 +34,7 @@ class MatchingService(
     private val teamRatingRepository: TeamRatingRepository,
     private val teamRepository: TeamRepository,
     private val teamMemberRepository: TeamMemberRepository,
+    private val dugoutAiClient: DugoutAiClient,
 ) {
 
     @Transactional
@@ -232,11 +235,28 @@ class MatchingService(
         teamRatingRepository.findByTeamId(team.id)
             ?: teamRatingRepository.save(TeamRating.ofTeam(team))
 
+    /**
+     * dugout-ai의 가중 스코어(40/25/20/15)를 호출.
+     * 백엔드가 distance/time_overlap을 정확히 모를 때는 보수적 기본값(0/1.0) 사용.
+     * AI 미가용 시 ELO 차이만으로 폴백.
+     */
     private fun simpleScore(team: Team, opponent: Team): Double {
         val a = teamRatingRepository.findByTeamId(team.id) ?: return 50.0
         val b = teamRatingRepository.findByTeamId(opponent.id) ?: return 50.0
-        val diff = abs(a.eloRating - b.eloRating).toDouble()
-        return (100.0 - (diff / 4.0)).coerceIn(0.0, 100.0)
+        return try {
+            dugoutAiClient.computeMatchingScore(
+                AiMatchingScoreRequest(
+                    homeElo = a.eloRating,
+                    awayElo = b.eloRating,
+                    distanceKm = 0.0,
+                    timeOverlapRatio = 1.0,
+                    awayMannerScore = b.mannerScore,
+                ),
+            ).totalScore
+        } catch (e: BusinessException) {
+            val diff = abs(a.eloRating - b.eloRating).toDouble()
+            (100.0 - (diff / 4.0)).coerceIn(0.0, 100.0)
+        }
     }
 
     private fun findRequest(requestId: Long): MatchingRequest =

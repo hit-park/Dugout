@@ -17,6 +17,9 @@ import com.dugout.api.domain.team.repository.TeamRepository
 import com.dugout.api.domain.user.entity.AuthProvider
 import com.dugout.api.domain.user.entity.User
 import com.dugout.api.domain.user.repository.UserRepository
+import com.dugout.api.global.ai.AiMercenaryMatch
+import com.dugout.api.global.ai.AiMercenaryRecommendResponse
+import com.dugout.api.global.ai.DugoutAiClient
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -39,6 +42,7 @@ class MercenaryServiceTest {
     @Mock lateinit var userRepository: UserRepository
     @Mock lateinit var teamRepository: TeamRepository
     @Mock lateinit var teamMemberRepository: TeamMemberRepository
+    @Mock lateinit var dugoutAiClient: DugoutAiClient
 
     private lateinit var service: MercenaryService
 
@@ -46,7 +50,7 @@ class MercenaryServiceTest {
     fun setUp() {
         service = MercenaryService(
             profileRepository, requestRepository, applicationRepository,
-            userRepository, teamRepository, teamMemberRepository,
+            userRepository, teamRepository, teamMemberRepository, dugoutAiClient,
         )
     }
 
@@ -182,8 +186,9 @@ class MercenaryServiceTest {
     }
 
     @Test
-    fun `추천 stub - region·position 매칭하는 활성 프로필만 평점순 반환`() {
+    fun `추천 - dugout-ai 응답 user_id 순서대로 프로필 매핑`() {
         val team = sampleTeam()
+        val matchedUser = sampleUser("매치O")
         val request = MercenaryRequest.create(
             team = team,
             matchId = 1L,
@@ -191,16 +196,26 @@ class MercenaryServiceTest {
             neededCount = 1,
             regions = listOf("서울 강남"),
         )
-        val matched = MercenaryProfile.create(sampleUser("매치O")).apply {
+        val matched = MercenaryProfile.create(matchedUser).apply {
             update(true, listOf("서울 강남"), null, null, listOf("P"), null)
-            // rating 보정은 동일 mock에서 추가 처리 없이 0.0
-        }
-        val unmatchedRegion = MercenaryProfile.create(sampleUser("매치X")).apply {
-            update(true, listOf("부산"), null, null, listOf("P"), null)
         }
 
         whenever(requestRepository.findById(request.id)).thenReturn(Optional.of(request))
-        whenever(profileRepository.findAllByIsActiveTrue()).thenReturn(listOf(matched, unmatchedRegion))
+        whenever(profileRepository.findAllByIsActiveTrue()).thenReturn(listOf(matched))
+        whenever(dugoutAiClient.recommendMercenary(any())).thenReturn(
+            AiMercenaryRecommendResponse(
+                requestId = request.id,
+                matches = listOf(
+                    AiMercenaryMatch(
+                        userId = matchedUser.id,
+                        nickname = matchedUser.nickname,
+                        score = 80.0,
+                        matchedPositions = listOf("P"),
+                        matchedRegions = listOf("서울 강남"),
+                    ),
+                ),
+            ),
+        )
 
         val recommended = service.recommendCandidates(request.id)
 

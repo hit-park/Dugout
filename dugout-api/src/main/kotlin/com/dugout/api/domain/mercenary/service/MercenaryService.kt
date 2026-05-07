@@ -18,6 +18,9 @@ import com.dugout.api.domain.team.entity.TeamRole
 import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.team.repository.TeamRepository
 import com.dugout.api.domain.user.repository.UserRepository
+import com.dugout.api.global.ai.AiMercenaryCandidate
+import com.dugout.api.global.ai.AiMercenaryRecommendRequest
+import com.dugout.api.global.ai.DugoutAiClient
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
 import org.springframework.stereotype.Service
@@ -32,6 +35,7 @@ class MercenaryService(
     private val userRepository: UserRepository,
     private val teamRepository: TeamRepository,
     private val teamMemberRepository: TeamMemberRepository,
+    private val dugoutAiClient: DugoutAiClient,
 ) {
 
     @Transactional
@@ -162,29 +166,39 @@ class MercenaryService(
     }
 
     /**
-     * Phase 1 추천 stub: dugout-ai 미가용 시 백엔드에서 단순 필터링.
-     *  - 활성 프로필
-     *  - region 또는 position 교집합이 있는 후보
-     *  - rating 내림차순 정렬
-     * Phase 2에서 dugout-ai 호출로 교체 (가중 스코어 + 기여도 분석).
+     * dugout-ai에 활성 프로필 후보를 보내고 가중 스코어 기반 추천을 받는다.
+     * 응답의 user_id 순서대로 프로필을 매핑해서 반환.
      */
     fun recommendCandidates(requestId: Long): List<MercenaryProfileResponse> {
         val request = findRequest(requestId)
         val activeProfiles = profileRepository.findAllByIsActiveTrue()
+        if (activeProfiles.isEmpty()) return emptyList()
 
-        val matchedRegions = request.regions.toSet()
-        val matchedPositions = request.neededPositions.toSet()
+        val candidates = activeProfiles.map { profile ->
+            AiMercenaryCandidate(
+                userId = profile.user.id,
+                nickname = profile.user.nickname,
+                regions = profile.regions,
+                positions = profile.positions,
+                availableDays = profile.availableDays,
+                rating = profile.rating,
+                totalGames = profile.totalGames,
+            )
+        }
 
-        return activeProfiles
-            .filter { profile ->
-                val regionMatch = matchedRegions.isEmpty() ||
-                    profile.regions.any { it in matchedRegions }
-                val positionMatch = matchedPositions.isEmpty() ||
-                    profile.positions.any { it in matchedPositions }
-                regionMatch && positionMatch
-            }
-            .sortedByDescending { it.rating }
-            .map(MercenaryProfileResponse::from)
+        val response = dugoutAiClient.recommendMercenary(
+            AiMercenaryRecommendRequest(
+                requestId = requestId,
+                neededPositions = request.neededPositions,
+                neededRegions = request.regions,
+                candidates = candidates,
+            ),
+        )
+
+        val profilesByUserId = activeProfiles.associateBy { it.user.id }
+        return response.matches.mapNotNull { match ->
+            profilesByUserId[match.userId]?.let(MercenaryProfileResponse::from)
+        }
     }
 
     private fun loadForDecision(

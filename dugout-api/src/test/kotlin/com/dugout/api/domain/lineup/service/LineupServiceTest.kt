@@ -18,6 +18,9 @@ import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.user.entity.AuthProvider
 import com.dugout.api.domain.user.entity.User
 import com.dugout.api.domain.user.repository.UserRepository
+import com.dugout.api.global.ai.AiLineupAssignment
+import com.dugout.api.global.ai.AiLineupRecommendResponse
+import com.dugout.api.global.ai.DugoutAiClient
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -43,6 +46,7 @@ class LineupServiceTest {
     @Mock lateinit var attendanceRepository: AttendanceRepository
     @Mock lateinit var userRepository: UserRepository
     @Mock lateinit var teamMemberRepository: TeamMemberRepository
+    @Mock lateinit var dugoutAiClient: DugoutAiClient
 
     private lateinit var service: LineupService
 
@@ -50,7 +54,7 @@ class LineupServiceTest {
     fun setUp() {
         service = LineupService(
             lineupRepository, lineupEntryRepository, matchRepository,
-            attendanceRepository, userRepository, teamMemberRepository,
+            attendanceRepository, userRepository, teamMemberRepository, dugoutAiClient,
         )
     }
 
@@ -79,7 +83,7 @@ class LineupServiceTest {
     }
 
     @Test
-    fun `추천 stub - 9명이상이면 9개 필드 포지션 순으로 배정`() {
+    fun `추천 - AI 응답을 LineupRecommendationResponse로 매핑`() {
         val team = sampleTeam()
         val match = sampleMatch(team)
         val attendees = (1..10).map {
@@ -88,17 +92,25 @@ class LineupServiceTest {
         whenever(matchRepository.findById(match.id)).thenReturn(Optional.of(match))
         whenever(teamMemberRepository.existsByTeamIdAndUserIdAndIsActiveTrue(team.id, 1L)).thenReturn(true)
         whenever(attendanceRepository.findByMatchIdOrderByRespondedAtAsc(match.id)).thenReturn(attendees)
+        whenever(dugoutAiClient.recommendLineup(any())).thenReturn(
+            AiLineupRecommendResponse(
+                matchId = match.id,
+                isAiGenerated = true,
+                source = "AI",
+                entries = listOf(
+                    AiLineupAssignment(userId = 100, position = "P", battingOrder = 1, isBench = false),
+                    AiLineupAssignment(userId = 101, position = "C", battingOrder = 2, isBench = false),
+                    AiLineupAssignment(userId = 102, position = "DH", battingOrder = null, isBench = true),
+                ),
+            ),
+        )
 
         val response = service.recommend(1L, match.id)
 
-        assertEquals("STUB", response.source)
+        assertEquals("AI", response.source)
         assertEquals(true, response.isAiGenerated)
-        assertEquals(10, response.entries.size)
-        // 처음 9명 선발
-        val starters = response.entries.take(9)
-        assertEquals(listOf("P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"), starters.map { it.position })
-        assertEquals((1..9).toList(), starters.map { it.battingOrder })
-        // 10번째는 벤치
+        assertEquals(3, response.entries.size)
+        assertEquals(listOf("P", "C", "DH"), response.entries.map { it.position })
         assertTrue(response.entries.last().isBench)
     }
 

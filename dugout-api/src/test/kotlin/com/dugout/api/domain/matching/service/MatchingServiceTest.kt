@@ -16,6 +16,7 @@ import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.team.repository.TeamRepository
 import com.dugout.api.domain.user.entity.AuthProvider
 import com.dugout.api.domain.user.entity.User
+import com.dugout.api.global.ai.DugoutAiClient
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -38,6 +39,7 @@ class MatchingServiceTest {
     @Mock lateinit var teamRatingRepository: TeamRatingRepository
     @Mock lateinit var teamRepository: TeamRepository
     @Mock lateinit var teamMemberRepository: TeamMemberRepository
+    @Mock lateinit var dugoutAiClient: DugoutAiClient
 
     private lateinit var service: MatchingService
 
@@ -45,7 +47,7 @@ class MatchingServiceTest {
     fun setUp() {
         service = MatchingService(
             requestRepository, proposalRepository, teamRatingRepository,
-            teamRepository, teamMemberRepository,
+            teamRepository, teamMemberRepository, dugoutAiClient,
         )
     }
 

@@ -80,4 +80,8 @@ enum class ErrorCode(
     DUPLICATE_MATCHING_PROPOSAL(HttpStatus.CONFLICT, "이미 제안된 팀입니다"),
     INVALID_MATCH_RESULT(HttpStatus.BAD_REQUEST, "유효하지 않은 경기 결과입니다"),
     SELF_MATCHING_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "자기 팀에 매칭 제안할 수 없습니다"),
+
+    // AI Service
+    AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 서비스에 연결할 수 없습니다"),
+    AI_REQUEST_FAILED(HttpStatus.BAD_GATEWAY, "AI 서비스 응답이 비정상입니다"),
 }

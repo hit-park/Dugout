@@ -17,6 +17,9 @@ import com.dugout.api.domain.team.entity.TeamRole
 import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.user.entity.User
 import com.dugout.api.domain.user.repository.UserRepository
+import com.dugout.api.global.ai.AiAttendeeProfile
+import com.dugout.api.global.ai.AiLineupRecommendRequest
+import com.dugout.api.global.ai.DugoutAiClient
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
 import org.springframework.stereotype.Service
@@ -31,14 +34,11 @@ class LineupService(
     private val attendanceRepository: AttendanceRepository,
     private val userRepository: UserRepository,
     private val teamMemberRepository: TeamMemberRepository,
+    private val dugoutAiClient: DugoutAiClient,
 ) {
 
     /**
-     * Phase 1 추천 stub: dugout-ai 미가용 시 백엔드 단순 구현.
-     *  - 출석자(ATTEND, LATE) 9명을 P,C,1B,2B,3B,SS,LF,CF,RF에 응답 시각순으로 배정
-     *  - 1~9번 타순도 같은 순서
-     *  - 9명 미만이면 INSUFFICIENT_ATTENDEES
-     * Phase 2에서 dugout-ai의 헝가리안 결과로 교체.
+     * dugout-ai 헝가리안 알고리즘 호출. AI 미가용 시 BusinessException(AI_SERVICE_UNAVAILABLE).
      */
     fun recommend(userId: Long, matchId: Long): LineupRecommendationResponse {
         val match = findMatch(matchId)
@@ -52,29 +52,32 @@ class LineupService(
             throw BusinessException(ErrorCode.INSUFFICIENT_ATTENDEES)
         }
 
-        val starters = attendees.take(Position.FIELD_POSITIONS.size)
-        val benches = attendees.drop(Position.FIELD_POSITIONS.size)
+        val aiResponse = dugoutAiClient.recommendLineup(
+            AiLineupRecommendRequest(
+                matchId = matchId,
+                attendees = attendees.map { user ->
+                    AiAttendeeProfile(
+                        userId = user.id,
+                        primaryPosition = "DH",  // 출석자 프로필이 없을 때는 DH로 보내고 AI가 적합도로 재배정
+                    )
+                },
+                lineupMode = match.team.lineupMode.name,
+            ),
+        )
 
-        val entries = starters.mapIndexed { index, user ->
+        val entries = aiResponse.entries.map { entry ->
             LineupEntryPayload(
-                userId = user.id,
-                position = Position.FIELD_POSITIONS[index],
-                battingOrder = index + 1,
-                isBench = false,
-            )
-        } + benches.map { user ->
-            LineupEntryPayload(
-                userId = user.id,
-                position = "DH",
-                battingOrder = null,
-                isBench = true,
+                userId = entry.userId,
+                position = entry.position,
+                battingOrder = entry.battingOrder,
+                isBench = entry.isBench,
             )
         }
 
         return LineupRecommendationResponse(
             matchId = matchId,
             isAiGenerated = true,
-            source = "STUB",
+            source = aiResponse.source,
             entries = entries,
         )
     }

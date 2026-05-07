@@ -26,6 +26,11 @@ jwt:
   access-token-expiry: 900000
   refresh-token-expiry: 2592000000
 
+dugout:
+  ai:
+    base-url: ${DUGOUT_AI_BASE_URL:http://localhost:8001}
+    timeout-ms: 5000
+
 oauth:
   kakao:
     user-info-url: https://kapi.kakao.com/v2/user/me
