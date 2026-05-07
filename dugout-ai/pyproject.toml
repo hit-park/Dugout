@@ -1,0 +1,26 @@
+[project]
+name = "dugout-ai"
+version = "0.1.0"
+description = "Dugout AI 서비스 — 출석 예측, 라인업 추천, 매칭 스코어, 용병 추천"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = [".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "C4"]
+ignore = ["E501"]  # line-length는 위에서 110으로 설정
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+exclude = ["tests/.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
