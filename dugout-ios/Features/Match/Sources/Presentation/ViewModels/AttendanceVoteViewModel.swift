@@ -32,7 +32,9 @@ public final class AttendanceVoteViewModel {
     public private(set) var state: State = .editing
     public var mainChoice: MainChoice = .attend {
         didSet {
+            guard mainChoice != oldValue else { return }
             if mainChoice != .attend { partialChoice = .none }
+            reason = ""
         }
     }
     public var partialChoice: PartialChoice = .none
