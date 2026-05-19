@@ -4,12 +4,17 @@
 //
 
 import SwiftUI
+import DugoutDesignSystem
 import DugoutAuthFeature
 
 @main
 struct DugoutApp: App {
     @State private var authViewModel = AuthViewModel()
     @State private var isReady = false
+
+    init() {
+        DGFontRegistrar.registerIfNeeded()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -20,6 +25,7 @@ struct DugoutApp: App {
                     SplashView()
                 }
             }
+            .preferredColorScheme(.light)
             .task {
                 await authViewModel.checkAuthStatus()
                 isReady = true

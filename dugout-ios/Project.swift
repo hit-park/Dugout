@@ -18,6 +18,7 @@ let baseSettings: SettingsDictionary = [
 func frameworkTarget(
     name: String,
     sourcesPath: String,
+    resources: ResourceFileElements? = nil,
     dependencies: [TargetDependency] = []
 ) -> Target {
     .target(
@@ -27,6 +28,7 @@ func frameworkTarget(
         bundleId: "\(bundleIDPrefix).\(name)",
         deploymentTargets: deploymentTargets,
         sources: ["\(sourcesPath)/**"],
+        resources: resources,
         dependencies: dependencies,
         settings: .settings(base: baseSettings)
     )
@@ -44,7 +46,8 @@ let coreNetwork = frameworkTarget(
 
 let designSystem = frameworkTarget(
     name: "DugoutDesignSystem",
-    sourcesPath: "Core/DesignSystem/Sources"
+    sourcesPath: "Core/DesignSystem/Sources",
+    resources: ["Core/DesignSystem/Resources/**"]
 )
 
 // MARK: - Feature Targets
