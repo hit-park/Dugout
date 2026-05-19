@@ -1,99 +1,143 @@
-//
-//  AuthView.swift
-//  DugoutAuthFeature
-//
-
 import SwiftUI
 import DugoutDesignSystem
 
 public struct AuthView: View {
     @Bindable var viewModel: AuthViewModel
-    @State private var devNicknameInput: String = ""
+    let onLoginSuccess: (User) -> Void
+    let onBrowseWithoutLogin: () -> Void
+
+    @State private var devNicknameInput = ""
     @State private var showDevInput = false
 
-    public init(viewModel: AuthViewModel) {
+    public init(
+        viewModel: AuthViewModel,
+        onLoginSuccess: @escaping (User) -> Void,
+        onBrowseWithoutLogin: @escaping () -> Void
+    ) {
         self.viewModel = viewModel
+        self.onLoginSuccess = onLoginSuccess
+        self.onBrowseWithoutLogin = onBrowseWithoutLogin
     }
 
     public var body: some View {
         ScrollView {
-            VStack(spacing: DGSpacing.xl) {
-                Spacer().frame(height: DGSpacing.xxl)
-
+            VStack(spacing: 0) {
+                Spacer().frame(height: 80)
                 logo
+                Spacer().frame(height: 48)
+                tagline
+                Spacer().frame(height: 56)
+                socialButtons
+                Spacer().frame(height: 20)
+                browseButton
+                Spacer().frame(height: 24)
 
-                VStack(spacing: DGSpacing.sm) {
-                    Text("사회인 야구팀 운영,\n더그아웃 하나로.")
-                        .font(DGFont.title)
-                        .multilineTextAlignment(.center)
-
-                    Text("출석 · 라인업 · 회비 · 매칭을 AI가 도와드려요")
-                        .font(DGFont.callout)
-                        .foregroundStyle(DGColor.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-
-                Spacer().frame(height: DGSpacing.xl)
-
-                if case .loading = viewModel.state {
-                    ProgressView().padding()
-                }
-
-                if case let .failed(message) = viewModel.state {
-                    Text(message)
-                        .font(DGFont.footnote)
-                        .foregroundStyle(DGColor.danger)
-                        .padding(.horizontal, DGSpacing.lg)
-                }
-
-                loginButtons
-
-                developerModeButton
+                #if DEBUG
+                devModeButton
+                Spacer().frame(height: 16)
+                #endif
             }
-            .padding(.horizontal, DGSpacing.xl)
+            .padding(.horizontal, DGSpacing.screenPadding)
         }
-        .background(DGColor.background.ignoresSafeArea())
-        .sheet(isPresented: $showDevInput) {
-            developerInputSheet
+        .background(DGColor.c0.ignoresSafeArea())
+        .onChange(of: viewModel.currentUser) { _, user in
+            if let user { onLoginSuccess(user) }
         }
+        .sheet(isPresented: $showDevInput) { devInputSheet }
     }
+
+    // MARK: - Subviews
 
     private var logo: some View {
-        VStack {
+        VStack(spacing: 8) {
             Image(systemName: "baseball.fill")
-                .font(.system(size: 72))
-                .foregroundStyle(DGColor.primary)
+                .font(.system(size: 64, weight: .bold))
+                .foregroundStyle(DGColor.p500)
             Text("Dugout")
-                .font(.system(size: 40, weight: .heavy, design: .rounded))
-                .foregroundStyle(DGColor.primary)
+                .font(DGFont.pretendard(.extrabold, size: 36))
+                .foregroundStyle(DGColor.p500)
+                .tracking(-0.8)
         }
     }
 
-    private var loginButtons: some View {
-        VStack(spacing: DGSpacing.md) {
-            ForEach(AuthProvider.oauthProviders, id: \.self) { provider in
-                DGButton(
-                    buttonLabel(for: provider),
-                    style: buttonStyle(for: provider),
-                    isLoading: isLoading,
-                    isEnabled: false // OAuth SDK 연동 전까지 비활성 (개발자 모드 사용)
-                ) {}
+    private var tagline: some View {
+        VStack(spacing: 6) {
+            Text("사회인 야구팀 운영,\n더그아웃 하나로.")
+                .font(DGFont.screenTitle)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(DGColor.c900)
+            Text("출석 · 라인업 · 회비 · 매칭을 AI가 도와드려요")
+                .font(DGFont.bodyText)
+                .foregroundStyle(DGColor.c500)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    private var socialButtons: some View {
+        VStack(spacing: DGSpacing.sm) {
+            if case .failed(let msg) = viewModel.state {
+                Text(msg)
+                    .font(DGFont.subText)
+                    .foregroundStyle(DGColor.danger)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            DGSocialButton(
+                provider: .kakao,
+                isLoading: isLoadingFor(.kakao),
+                isEnabled: !isLoading
+            ) {
+                Task { await viewModel.login(provider: .kakao, accessToken: "oauth-placeholder") }
+            }
+            DGSocialButton(
+                provider: .naver,
+                isLoading: isLoadingFor(.naver),
+                isEnabled: !isLoading
+            ) {
+                Task { await viewModel.login(provider: .naver, accessToken: "oauth-placeholder") }
+            }
+            DGSocialButton(
+                provider: .apple,
+                isLoading: isLoadingFor(.apple),
+                isEnabled: !isLoading
+            ) {
+                Task { await viewModel.login(provider: .apple, accessToken: "oauth-placeholder") }
+            }
+            DGSocialButton(
+                provider: .google,
+                isLoading: isLoadingFor(.google),
+                isEnabled: !isLoading
+            ) {
+                Task { await viewModel.login(provider: .google, accessToken: "oauth-placeholder") }
             }
         }
     }
 
-    private var developerModeButton: some View {
-        Button {
-            showDevInput = true
-        } label: {
-            Text("개발자 모드 (닉네임으로 로그인)")
-                .font(DGFont.caption)
-                .foregroundStyle(DGColor.textSecondary)
+    private var browseButton: some View {
+        Button(action: onBrowseWithoutLogin) {
+            Text("둘러보기")
+                .font(DGFont.label)
+                .foregroundStyle(DGColor.c500)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .overlay(
+                    RoundedRectangle(cornerRadius: DGRadius.button)
+                        .stroke(DGColor.c200, lineWidth: 1)
+                )
         }
-        .padding(.top, DGSpacing.md)
+        .buttonStyle(DGPressStyle())
     }
 
-    private var developerInputSheet: some View {
+    #if DEBUG
+    private var devModeButton: some View {
+        Button { showDevInput = true } label: {
+            Text("개발자 모드")
+                .font(DGFont.subText)
+                .foregroundStyle(DGColor.c400)
+        }
+    }
+
+    private var devInputSheet: some View {
         NavigationStack {
             Form {
                 Section("닉네임") {
@@ -101,19 +145,16 @@ public struct AuthView: View {
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                 }
-
                 Section {
                     Button("개발 로그인") {
-                        let nickname = devNicknameInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !nickname.isEmpty else { return }
+                        let nick = devNicknameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !nick.isEmpty else { return }
                         showDevInput = false
-                        Task {
-                            await viewModel.devLogin(nickname: nickname)
-                        }
+                        Task { await viewModel.devLogin(nickname: nick) }
                     }
                     .disabled(devNicknameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 } footer: {
-                    Text("백엔드 로컬 프로필에서만 동작합니다. 카카오 SDK 연동 전 앱 플로우를 검증하는 용도입니다. 같은 닉네임으로 재로그인하면 기존 계정으로 복귀합니다.")
+                    Text("백엔드 로컬 프로필 전용. 같은 닉네임으로 재로그인하면 기존 계정으로 복귀.")
                         .font(DGFont.caption)
                 }
             }
@@ -126,29 +167,20 @@ public struct AuthView: View {
             }
         }
     }
+    #endif
+
+    // MARK: - Helpers
 
     private var isLoading: Bool {
         if case .loading = viewModel.state { true } else { false }
     }
 
-    private func buttonLabel(for provider: AuthProvider) -> String {
-        switch provider {
-        case .kakao: "카카오로 시작하기"
-        case .naver: "네이버로 시작하기"
-        case .google: "Google로 시작하기"
-        case .apple: "Apple로 시작하기"
-        case .dev: "개발 로그인"
-        }
-    }
-
-    private func buttonStyle(for provider: AuthProvider) -> DGButton.Style {
-        switch provider {
-        case .kakao: .primary
-        default: .secondary
-        }
+    private func isLoadingFor(_ provider: AuthProvider) -> Bool {
+        // OAuth SDK 미연동 상태에서는 어떤 버튼을 눌렀는지 추적 불가 → 전체 loading 공유
+        isLoading
     }
 }
 
 #Preview {
-    AuthView(viewModel: AuthViewModel())
+    AuthView(viewModel: AuthViewModel(), onLoginSuccess: { _ in }, onBrowseWithoutLogin: {})
 }
