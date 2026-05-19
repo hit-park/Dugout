@@ -27,6 +27,7 @@ xcodebuild -workspace Dugout.xcworkspace -scheme Dugout \
 Dugout (App)
 ├── DugoutAuthFeature   ← Core/Network + DesignSystem
 ├── DugoutHomeFeature   ← Core/Network + DesignSystem + Auth + Team
+├── DugoutMatchFeature  ← Core/Network + DesignSystem
 └── DugoutTeamFeature   ← Core/Network + DesignSystem
 ```
 

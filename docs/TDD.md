@@ -1103,6 +1103,7 @@ dugout-ios/
 App
 ├── DugoutAuthFeature
 ├── DugoutHomeFeature
+├── DugoutMatchFeature
 └── DugoutTeamFeature
 
 DugoutAuthFeature
@@ -1115,12 +1116,18 @@ DugoutHomeFeature
 ├── DugoutAuthFeature       # AuthViewModel 환경 + LoginSheet 사용
 └── DugoutTeamFeature       # NavigationLink → TeamDetailView
 
+DugoutMatchFeature          # Phase 3 MATCH-A 신설
+├── DugoutCoreNetwork
+└── DugoutDesignSystem
+
 DugoutTeamFeature
 ├── DugoutCoreNetwork
 └── DugoutDesignSystem
 ```
 
-다음 페이즈에 추가될 모듈(Schedule / Attendance / Lineup / Finance / Matching / Mercenary / Ground / Settings 등)은 같은 Feature 단위 패턴(Domain / Data / Presentation)으로 신설. CoreNetwork + DesignSystem은 모든 Feature가 직접 의존하고, 다른 Feature에 의존할 때만 추가 엣지로 명시.
+`DugoutMatchFeature`는 Phase 3 MATCH-A에서 추가된 모듈로, 백엔드 `/api/v1/teams/{teamId}/matches`와 `/api/v1/matches/{matchId}` 엔드포인트를 사용한다. 캘린더 + 일정 리스트(MATCH-1)와 등록 폼(MATCH-2)을 제공하며 출석 응답·요약은 Phase 3-B, 3-C에서 추가될 예정이다.
+
+다음 페이즈에 추가될 모듈(Attendance / Lineup / Finance / Matching / Mercenary / Ground / Settings 등)은 같은 Feature 단위 패턴(Domain / Data / Presentation)으로 신설. CoreNetwork + DesignSystem은 모든 Feature가 직접 의존하고, 다른 Feature에 의존할 때만 추가 엣지로 명시.
 
 #### 레이어별 책임
 
