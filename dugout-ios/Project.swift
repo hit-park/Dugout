@@ -81,6 +81,15 @@ let teamFeature = frameworkTarget(
     ]
 )
 
+let matchFeature = frameworkTarget(
+    name: "DugoutMatchFeature",
+    sourcesPath: "Features/Match/Sources",
+    dependencies: [
+        .target(name: "DugoutCoreNetwork"),
+        .target(name: "DugoutDesignSystem"),
+    ]
+)
+
 // MARK: - App Target
 
 let app: Target = .target(
@@ -111,6 +120,7 @@ let app: Target = .target(
         .target(name: "DugoutAuthFeature"),
         .target(name: "DugoutHomeFeature"),
         .target(name: "DugoutTeamFeature"),
+        .target(name: "DugoutMatchFeature"),
     ],
     settings: .settings(base: baseSettings)
 )
@@ -127,5 +137,6 @@ let project = Project(
         authFeature,
         homeFeature,
         teamFeature,
+        matchFeature,
     ]
 )
