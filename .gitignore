@@ -102,3 +102,12 @@ logs/
 # Git worktrees
 # ===========================
 .worktrees/
+
+# ===========================
+# Claude Code (사용자별 설정 + 자동 생성 워크트리)
+# ===========================
+# tracked: .claude/agents/, .claude/commands/, .claude/skills/
+.claude/settings.json
+.claude/settings.local.json
+.claude/worktrees/
+.claire/
