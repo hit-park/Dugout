@@ -88,6 +88,10 @@ public final class AuthViewModel {
         }
     }
 
+    public func updateCurrentUser(_ user: User) {
+        state = .authenticated(user)
+    }
+
     public func logout() async {
         do {
             try await repository.logout()

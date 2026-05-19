@@ -1,24 +1,52 @@
-//
-//  AppRouter.swift
-//  Dugout
-//
-//  탭 selection + 탭별 NavigationPath 일원화. 딥링크는 후속 Phase에서 확장.
-//
-
 import SwiftUI
+import DugoutAuthFeature
 
-enum AppTab: Hashable, Sendable, CaseIterable {
+public enum AppTab: Hashable, Sendable, CaseIterable {
     case home, schedule, matching, team, my
+}
+
+public enum OnboardingStep: Hashable, Sendable {
+    case nickname
+    case position
+    case startMode
+}
+
+public enum AppRoute: Equatable, Sendable {
+    case splash
+    case login
+    case onboarding(OnboardingStep)
+    case main
 }
 
 @MainActor
 @Observable
-final class AppRouter {
-    var selectedTab: AppTab = .home
+public final class AppRouter {
+    public var route: AppRoute = .splash
+    public var selectedTab: AppTab = .home
 
-    var homePath = NavigationPath()
-    var schedulePath = NavigationPath()
-    var matchingPath = NavigationPath()
-    var teamPath = NavigationPath()
-    var myPath = NavigationPath()
+    public var homePath = NavigationPath()
+    public var schedulePath = NavigationPath()
+    public var matchingPath = NavigationPath()
+    public var teamPath = NavigationPath()
+    public var myPath = NavigationPath()
+
+    public func navigate(to route: AppRoute) {
+        self.route = route
+    }
+
+    public func navigateAfterLogin(user: User) {
+        if user.isOnboardingComplete {
+            route = .main
+        } else {
+            route = .onboarding(nextOnboardingStep(for: user))
+        }
+    }
+
+    private func nextOnboardingStep(for user: User) -> OnboardingStep {
+        switch user.onboardingStep {
+        case 0: .nickname
+        case 1: .position
+        default: .startMode
+        }
+    }
 }

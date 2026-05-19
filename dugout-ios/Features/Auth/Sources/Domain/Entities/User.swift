@@ -1,32 +1,39 @@
-//
-//  User.swift
-//  DugoutAuthFeature
-//
-
 import Foundation
 
-/// 인증 도메인의 사용자 Entity.
-/// Feature 독립성을 위해 각 Feature가 자체 User Entity를 가질 수 있다.
 public struct User: Sendable, Equatable, Identifiable, Hashable {
     public let id: Int64
     public let email: String?
     public let nickname: String
     public let profileImgUrl: String?
     public let provider: AuthProvider
+    public let jerseyNumber: Int?
+    public let mainPosition: BaseballPosition?
+    public let subPositions: [BaseballPosition]
+    public let onboardingStep: Int
 
     public init(
         id: Int64,
         email: String?,
         nickname: String,
         profileImgUrl: String?,
-        provider: AuthProvider
+        provider: AuthProvider,
+        jerseyNumber: Int? = nil,
+        mainPosition: BaseballPosition? = nil,
+        subPositions: [BaseballPosition] = [],
+        onboardingStep: Int = 0
     ) {
         self.id = id
         self.email = email
         self.nickname = nickname
         self.profileImgUrl = profileImgUrl
         self.provider = provider
+        self.jerseyNumber = jerseyNumber
+        self.mainPosition = mainPosition
+        self.subPositions = subPositions
+        self.onboardingStep = onboardingStep
     }
+
+    public var isOnboardingComplete: Bool { onboardingStep >= 3 }
 }
 
 public enum AuthProvider: String, Sendable, Hashable, CaseIterable {
@@ -34,18 +41,14 @@ public enum AuthProvider: String, Sendable, Hashable, CaseIterable {
     case naver = "NAVER"
     case google = "GOOGLE"
     case apple = "APPLE"
-    /// 개발용 가짜 provider. UI에는 노출되지 않음.
     case dev = "DEV"
 
-    /// 실제 로그인 버튼으로 노출할 OAuth 제공자 목록 (dev 제외).
     public static var oauthProviders: [AuthProvider] {
         [.kakao, .naver, .google, .apple]
     }
 }
 
 public extension AuthProvider {
-    /// UI에 노출할 사용자 친화적 표기.
-    /// rawValue("KAKAO", "DEV" 등)는 API 식별자이므로 UI에 직접 사용하지 않는다.
     var displayName: String {
         switch self {
         case .kakao: "카카오"
@@ -55,4 +58,47 @@ public extension AuthProvider {
         case .dev: "개발 모드"
         }
     }
+}
+
+public enum BaseballPosition: String, Sendable, Hashable, CaseIterable {
+    case pitcher = "P"
+    case catcher = "C"
+    case firstBase = "1B"
+    case secondBase = "2B"
+    case thirdBase = "3B"
+    case shortStop = "SS"
+    case leftField = "LF"
+    case centerField = "CF"
+    case rightField = "RF"
+    case designatedHitter = "DH"
+
+    public var displayName: String {
+        switch self {
+        case .pitcher:           "투수"
+        case .catcher:           "포수"
+        case .firstBase:         "1루수"
+        case .secondBase:        "2루수"
+        case .thirdBase:         "3루수"
+        case .shortStop:         "유격수"
+        case .leftField:         "좌익수"
+        case .centerField:       "중견수"
+        case .rightField:        "우익수"
+        case .designatedHitter:  "지명타자"
+        }
+    }
+
+    public var shortName: String { rawValue }
+
+    /// 3×3 그리드 배치 순서 (DH는 별도 행)
+    public static var gridPositions: [BaseballPosition] {
+        [.pitcher, .catcher, .firstBase,
+         .secondBase, .thirdBase, .shortStop,
+         .leftField, .centerField, .rightField]
+    }
+}
+
+public enum OnboardingStartMode: String, Sendable, Hashable {
+    case createTeam = "CREATE_TEAM"
+    case joinTeam = "JOIN_TEAM"
+    case mercenary = "MERCENARY"
 }

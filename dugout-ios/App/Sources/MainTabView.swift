@@ -12,7 +12,7 @@ import DugoutHomeFeature
 
 struct MainTabView: View {
     @Bindable var authViewModel: AuthViewModel
-    @State private var router = AppRouter()
+    @Bindable var router: AppRouter
 
     private let tabs: [DGTabItem<AppTab>] = [
         .init(id: .home, title: "홈", systemImage: "house.fill"),
