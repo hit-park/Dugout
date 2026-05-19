@@ -1,10 +1,12 @@
 import SwiftUI
 import DugoutCoreNetwork
+import DugoutAuthFeature
 import DugoutHomeFeature
 import DugoutMatchFeature
 import DugoutDesignSystem
 
 struct ScheduleTabHost: View {
+    @Bindable var authViewModel: AuthViewModel
     @State private var teams: [MyTeam]?
     @State private var errorMessage: String?
     private let repository: any HomeRepository = HomeRepositoryImpl()
@@ -16,11 +18,15 @@ struct ScheduleTabHost: View {
                     Task { await load() }
                 }
             } else if let teams {
-                if let firstTeam = teams.first {
-                    MatchListView(
-                        teamId: firstTeam.teamId,
-                        isManager: firstTeam.role == .captain || firstTeam.role == .manager
-                    )
+                if let firstTeam = teams.first,
+                   let currentUserId = authViewModel.currentUser?.id {
+                    NavigationStack {
+                        MatchListView(
+                            teamId: firstTeam.teamId,
+                            isManager: firstTeam.role == .captain || firstTeam.role == .manager,
+                            currentUserId: currentUserId
+                        )
+                    }
                 } else {
                     DGEmptyState(
                         icon: "⚾",

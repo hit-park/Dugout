@@ -15,6 +15,9 @@ public protocol MatchRepository: Sendable {
 
     /// 경기 등록 (주장/매니저만).
     func createMatch(teamId: Int64, request: CreateMatchRequest) async throws -> Match
+
+    /// 경기 상세 1건 조회.
+    func fetchDetail(matchId: Int64) async throws -> Match
 }
 
 public struct CreateMatchRequest: Sendable {
