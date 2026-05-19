@@ -13,7 +13,7 @@ struct CreateMatchRequestDTO: Encodable, Sendable {
     let opponentTeamId: Int64?
     let groundId: Int64?
     let groundName: String?
-    let voteDeadline: Date?
+    let voteDeadline: String?  // "yyyy-MM-dd'T'HH:mm:ss" (Asia/Seoul 로컬 시각, TZ 없음 — 백엔드 LocalDateTime 호환)
     let memo: String?
 
     enum CodingKeys: String, CodingKey {

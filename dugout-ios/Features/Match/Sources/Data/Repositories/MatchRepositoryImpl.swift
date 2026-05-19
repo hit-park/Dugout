@@ -38,7 +38,7 @@ public struct MatchRepositoryImpl: MatchRepository {
             opponentTeamId: nil,
             groundId: nil,
             groundName: request.groundName,
-            voteDeadline: request.voteDeadline,
+            voteDeadline: request.voteDeadline.map { LocalDateTimeFormatter.shared.string(from: $0) },
             memo: request.memo
         )
         let endpoint = APIEndpoint.json(

@@ -77,3 +77,13 @@ enum LocalDateFormatter {
         return f
     }()
 }
+
+enum LocalDateTimeFormatter {
+    static let shared: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "Asia/Seoul")
+        f.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        return f
+    }()
+}
