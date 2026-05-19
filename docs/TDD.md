@@ -1116,7 +1116,7 @@ DugoutHomeFeature
 ├── DugoutAuthFeature       # AuthViewModel 환경 + LoginSheet 사용
 └── DugoutTeamFeature       # NavigationLink → TeamDetailView
 
-DugoutMatchFeature          # Phase 3 MATCH-A 신설
+DugoutMatchFeature          # Phase 3 MATCH-A·B (일정·등록·상세·출석 응답)
 ├── DugoutCoreNetwork
 └── DugoutDesignSystem
 
@@ -1127,7 +1127,9 @@ DugoutTeamFeature
 
 `DugoutMatchFeature`는 Phase 3 MATCH-A·B에서 추가된 모듈로, 백엔드 `/api/v1/teams/{teamId}/matches`, `/api/v1/matches/{matchId}`, `/api/v1/matches/{matchId}/attendance` 엔드포인트를 사용한다. 경기 일정(MATCH-1)·등록(MATCH-2)·상세(MATCH-3)·출석 응답(MATCH-4)을 제공한다. 출석 요약(MATCH-5)·카카오 공유는 Phase 3-C 예정이다.
 
-다음 페이즈에 추가될 모듈(Attendance / Lineup / Finance / Matching / Mercenary / Ground / Settings 등)은 같은 Feature 단위 패턴(Domain / Data / Presentation)으로 신설. CoreNetwork + DesignSystem은 모든 Feature가 직접 의존하고, 다른 Feature에 의존할 때만 추가 엣지로 명시.
+> Attendance 도메인은 `DugoutMatchFeature` 내부의 `Sources/{Domain,Data,Presentation}/`에 함께 포함되어 있다 (별도 모듈 아님). 출석 응답이 경기 컨텍스트에 종속적이라 모듈 분리보다 폴더 격리가 결합도·오버헤드 측면에서 유리하다고 판단.
+
+다음 페이즈에 추가될 모듈(Lineup / Finance / Matching / Mercenary / Ground / Settings 등)은 같은 Feature 단위 패턴(Domain / Data / Presentation)으로 신설. CoreNetwork + DesignSystem은 모든 Feature가 직접 의존하고, 다른 Feature에 의존할 때만 추가 엣지로 명시.
 
 #### 레이어별 책임
 
