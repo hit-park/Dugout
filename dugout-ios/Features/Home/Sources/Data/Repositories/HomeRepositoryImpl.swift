@@ -54,7 +54,7 @@ public struct HomeRepositoryImpl: HomeRepository {
         let dtos: [MatchListItemDTO] = try await client.request(endpoint)
         let now = Date()
         return dtos
-            .map { $0.toNextMatch() }
+            .compactMap { $0.toNextMatch() }
             .filter { $0.scheduledAt >= now }
             .sorted { $0.scheduledAt < $1.scheduledAt }
             .first

@@ -38,7 +38,7 @@ struct MainTabView: View {
         case .home:
             HomeView(authViewModel: authViewModel)
         case .schedule:
-            placeholder(title: "일정", message: "경기 일정 기능을 준비 중이에요")
+            ScheduleTabHost()
         case .matching:
             placeholder(title: "매칭", message: "팀·용병 매칭 기능을 준비 중이에요")
         case .team:
@@ -53,3 +53,4 @@ struct MainTabView: View {
             .background(DGColor.c100)
     }
 }
+

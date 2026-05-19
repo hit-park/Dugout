@@ -3,30 +3,43 @@ import Foundation
 // MARK: - Match DTO (GET /api/v1/teams/{teamId}/matches)
 
 struct MatchListItemDTO: Decodable, Sendable {
-    let matchId: Int64
-    let scheduledAt: Date
+    let id: Int64
     let opponentName: String?
     let groundName: String?
-    let address: String?
+    let matchDate: String   // "yyyy-MM-dd"
+    let matchTime: String   // "HH:mm:ss"
     let status: String?
 
     enum CodingKeys: String, CodingKey {
-        case matchId = "match_id"
-        case scheduledAt = "scheduled_at"
+        case id
         case opponentName = "opponent_name"
-        case groundName = "ground_name"
-        case address
+        case groundName   = "ground_name"
+        case matchDate    = "match_date"
+        case matchTime    = "match_time"
         case status
     }
 
-    func toNextMatch() -> NextMatch {
-        NextMatch(
-            id: matchId,
+    func toNextMatch() -> NextMatch? {
+        guard let scheduledAt = combine(date: matchDate, time: matchTime) else { return nil }
+        return NextMatch(
+            id: id,
             opponentName: opponentName,
             scheduledAt: scheduledAt,
             groundName: groundName,
-            address: address
+            address: nil   // BACKEND-GAP: Match 엔티티에 주소 없음. Ground 도메인 연동 시 보강
         )
+    }
+
+    private static let scheduledAtFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "Asia/Seoul")
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return f
+    }()
+
+    private func combine(date: String, time: String) -> Date? {
+        Self.scheduledAtFormatter.date(from: "\(date) \(time)")
     }
 }
 
