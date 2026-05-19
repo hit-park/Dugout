@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dugout — Team Flow Storyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="dugout-screens.jsx"></script>
+<script type="text/babel" src="storyboard-kit.jsx"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',-apple-system,sans-serif; background:#F1ECE5; color:#1F1E1B; -webkit-font-smoothing:antialiased; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+function Cover() {
+  return (
+    <div style={{ width:1480, padding:'48px 56px', display:'flex', flexDirection:'column', gap:28 }}>
+      <CoverHeader
+        flowNo="③"
+        flowName="Team"
+        title={"팀 플로우\n목록 → 생성·참가 → 상세 → 권한"}
+        summary="팀 객체의 전체 생명주기를 다룹니다. 한 사용자는 N개 팀에 소속될 수 있고, 각 팀에서의 역할(주장/매니저/회계/일반)에 따라 보이는 액션이 달라집니다."
+        stats={[
+          { num:'5', label:'화면' },
+          { num:'4', label:'역할 타입' },
+          { num:'2', label:'참여 방식 (코드/QR)' },
+          { num:'1', label:'위험 액션 (추방)' },
+        ]}
+      />
+      <FlowMap
+        title="Flow Map · 팀 생명주기"
+        rows={[
+          { nodes:[
+            { id:'TEAM-1', label:'내 팀 목록',  tone:'brand' },
+          ]},
+          { indent:1, branch:'├─ 생성 ', nodes:[ { id:'TEAM-2', label:'팀 만들기 (주장)', tone:'success' }, { id:'TEAM-4', label:'팀 상세', tone:'brand', via:'저장' } ]},
+          { indent:1, branch:'├─ 참가 ', nodes:[ { id:'TEAM-3', label:'초대 코드/QR', tone:'success' }, { id:'TEAM-4', label:'팀 상세', tone:'brand', via:'승인' } ]},
+          { indent:1, branch:'└─ 진입 ', nodes:[ { id:'TEAM-4', label:'팀 상세', tone:'brand' }, { id:'TEAM-5', label:'멤버 다이얼로그', tone:'warning', via:'멤버 탭(주장)' } ]},
+        ]}
+      />
+      <Legend />
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+        {[
+          { role:'주장', desc:'전체 권한 (생성·삭제·권한 변경)', bg:C.s100, color:C.s700 },
+          { role:'매니저', desc:'경기·공지·멤버 관리', bg:C.p50, color:C.p600 },
+          { role:'회계', desc:'회비 관리만', bg:'rgba(217,119,6,0.14)', color:TS.warning },
+          { role:'일반', desc:'출석 응답·열람만', bg:C.c100, color:C.c700 },
+        ].map(r=>(
+          <div key={r.role} style={{ padding:'12px 14px', background:TS.paper, borderRadius:12, border:`1px solid ${TS.borderSubtle}` }}>
+            <span style={{ display:'inline-block', padding:'2px 8px', borderRadius:9999, background:r.bg, color:r.color, fontSize:11, fontWeight:700 }}>{r.role}</span>
+            <div style={{ fontSize:12, color:TS.text2, marginTop:6 }}>{r.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OtpStates() {
+  const Cell = ({ ch, border, bw=1, bg='#fff' }) => (
+    <div style={{ width:38, height:48, borderRadius:10, border:`${bw}px solid ${border}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:700, background:bg, fontFamily:'JetBrains Mono,monospace' }}>{ch}</div>
+  );
+  const Row = ({ vals, mode }) => {
+    const map = {
+      empty:    () => Array(6).fill(['',C.c200,1]),
+      focus:    () => [['',C.p500,2], ['',C.c200,1], ['',C.c200,1], ['',C.c200,1], ['',C.c200,1], ['',C.c200,1]],
+      typing:   () => [['A',C.c200,1], ['B',C.c200,1], ['C',C.p500,2], ['',C.c200,1], ['',C.c200,1], ['',C.c200,1]],
+      filled:   () => [['A',C.c200,1], ['B',C.c200,1], ['C',C.c200,1], ['1',C.c200,1], ['2',C.c200,1], ['3',C.p500,2]],
+      invalid:  () => Array(6).fill(0).map((_,i)=>['ABC123'[i], C.danger, 2, 'rgba(220,38,38,0.06)']),
+    };
+    return <div style={{ display:'flex', gap:6 }}>{map[mode]().map((c,i)=><Cell key={i} ch={c[0]} border={c[1]} bw={c[2]} bg={c[3]||'#fff'} />)}</div>;
+  };
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 6자리 초대 코드</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>OTP 스타일. 첫 입력 칸이 자동 포커스 → 글자 입력 시 다음 칸으로 이동. 6/6 완성되어야 CTA enabled.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:24, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="empty" tone="neutral"><Row mode="empty" /></StateRow>
+        <StateRow label="focus" tone="brand" note="cell 1 ring"><Row mode="focus" /></StateRow>
+        <StateRow label="typing" tone="brand" note="auto-advance"><Row mode="typing" /></StateRow>
+        <StateRow label="filled" tone="success" note="CTA enabled"><Row mode="filled" /></StateRow>
+        <StateRow label="invalid" tone="danger" note="shake 120ms"><Row mode="invalid" /></StateRow>
+      </div>
+    </div>
+  );
+}
+
+function RolePillStates() {
+  const Pill = ({ bg, color, label }) => <span style={{ padding:'4px 12px', borderRadius:9999, background:bg, color, fontSize:12, fontWeight:700 }}>{label}</span>;
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 역할 뱃지</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>멤버 리스트 우측에 표시. 색상으로 권한 계층을 즉시 인지.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:24, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="captain" tone="warning" note="secondary-100/700"><Pill bg={C.s100} color={C.s700} label="주장" /></StateRow>
+        <StateRow label="manager" tone="brand" note="primary-50/600"><Pill bg={C.p50} color={C.p600} label="매니저" /></StateRow>
+        <StateRow label="treasurer" tone="warning" note="warning"><Pill bg="rgba(217,119,6,0.14)" color={C.warning} label="회계" /></StateRow>
+        <StateRow label="member" tone="neutral" note="cream-100/700"><Pill bg={C.c100} color={C.c700} label="일반" /></StateRow>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas title="Dugout — Team Flow Storyboard" subtitle="③ 팀 · 5 screens · 4 roles">
+      <FlowNav current="team.html" items={FLOW_NAV} />
+
+      <DCSection id="cover" title="00 · 표지 + 플로우 맵 + 역할">
+        <DCArtboard id="cover" label="Cover" width={1480} height={960} bg="#fff">
+          <Cover />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="list-create-join" title="01 · 목록 · 생성 · 참가 (TEAM-1 ~ TEAM-3)">
+        <DCArtboard id="t1" label="TEAM-1 · 내 팀 목록" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="TEAM-1" screen="Team List"
+            role="소속 팀 N개를 카드 형태로 나열. 역할 뱃지로 권한 즉시 식별."
+            action="① 팀 카드 탭 → 상세  ② ‘+ 팀 만들기’ CTA  ③ ‘초대 코드로 참여’ ghost"
+            transition="카드 탭 → TEAM-4 (slide-left 420ms) / 팀 만들기 → TEAM-2 (modal sheet) / 코드 → TEAM-3"
+            copy="역할은 우측 뱃지로만 표시. ‘권한: 주장’ 같은 풀텍스트 ❌"
+            edge="팀이 0개 → 이 화면 대신 HOME-1으로 라우팅 (탭바 보존)"
+            api="GET /users/me/teams → [{id, name, region, league, role, memberCount, nextMatchInDays}]"
+            components="team-card(logo+name+region+role) · btn-primary · btn-ghost · tab-bar(active=3)"
+          >
+            <S_TeamList />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="t2" label="TEAM-2 · 팀 만들기" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="TEAM-2" screen="Team Create"
+            role="주장이 새 팀을 생성. 필수 6필드 + 라인업 모드 결정"
+            action="이름·지역·부수·요일·라인업 모드 입력 → 우상단 ‘저장’ 탭"
+            transition="저장 → 200ms 로딩 → 성공 토스트 → TEAM-4 (해당 팀 상세). 실패 → 인라인 오류"
+            copy="‘저장’ vs ‘만들기’ — NavBar 우측은 ‘저장’으로 통일 (iOS 가이드)"
+            edge="팀 이름 중복 → 인라인 오류 + ‘대신 이렇게 어때요?’ 추천 칩 3개"
+            api="POST /teams {name, region, league, days[], lineupMode}"
+            components="nav-modal(취소·저장) · input(text)×2 · segment(부수 4) · weekday-picker · radio(라인업 2)"
+          >
+            <S_TeamCreate />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="t3" label="TEAM-3 · 초대 코드" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="TEAM-3" screen="Team Join"
+            role="6자리 코드 / QR 두 가지 진입 경로"
+            action="OTP 6칸 자동 포커스 입력 · 또는 ‘QR 스캔’ ghost 탭"
+            transition="6칸 완성 → CTA enabled. 참여 → 주장 승인 대기 화면 (또는 즉시 가입). QR → 카메라 권한 → 디코딩 → 자동 입력"
+            copy="대소문자 구분 없음을 placeholder에 명시"
+            edge="존재하지 않는 코드 → 6칸 shake + danger border / 만료 코드 → 토스트 ‘코드가 만료되었어요’"
+            api="POST /teams/join {code} · POST /teams/join-qr {payload}"
+            components="otp-input(6) · btn-ghost(QR) · btn-primary(참여하기)"
+          >
+            <S_TeamJoin />
+          </ScreenWithNotes>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="detail-member" title="02 · 팀 상세 · 멤버 권한 (TEAM-4 ~ TEAM-5)">
+        <DCArtboard id="t4" label="TEAM-4 · 팀 상세 (주장)" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="TEAM-4" screen="Team Detail"
+            role="팀 홈. 빠른 액션 4종 + 멤버 프리뷰 + 다음 경기 진입"
+            action="① 액션 그리드 4종 탭 (라인업·회비는 v0.5+로 dim)  ② 멤버 행 탭 → TEAM-5  ③ ‘⋯’ 메뉴"
+            transition="액션 탭 → 각 모듈 화면. 멤버 탭 → TEAM-5 (주장만, slide-up sheet 280ms)"
+            copy="‘주장’ 뱃지가 명확히 보이도록 우상단 고정"
+            edge="비활성 액션(dim)을 일반 멤버에게 노출하지 않음 — role=member면 그리드에서 숨김"
+            api="GET /teams/:id → {meta, role, members[], nextMatch}"
+            components="team-header-card · action-grid(4) · member-row(×3) · nav-back"
+          >
+            <S_TeamDetail />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="t5" label="TEAM-5 · 멤버 다이얼로그" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="TEAM-5" screen="Member Dialog"
+            role="주장 전용. 한 멤버의 권한 변경 + 추방"
+            action="권한 옵션 단일 선택 → 저장 / ‘팀에서 추방’ (위험)"
+            transition="권한 변경 → 200ms → 토스트 ‘OO으로 변경되었어요’. 추방 → 확인 alert (네이티브) → 토스트"
+            copy="‘추방’ 단어는 그대로 (완곡어법 ❌). 클릭 시 확인 alert로 보호"
+            edge="자기 자신은 권한 변경 불가 (주장 양도는 별도 플로우) / 본인이 마지막 주장이면 추방 차단"
+            api="PATCH /teams/:id/members/:userId {role} · DELETE /teams/:id/members/:userId"
+            components="member-summary · option-list(3) · btn-destructive · nav-back"
+          >
+            <S_MemberDialog />
+          </ScreenWithNotes>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states-otp" title="03 · 상태 갤러리 · 초대 코드">
+        <DCArtboard id="sg1" label="OTP States" width={1480} height={340} bg="#fff">
+          <OtpStates />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states-role" title="04 · 상태 갤러리 · 역할 뱃지">
+        <DCArtboard id="sg2" label="Role Pill States" width={1480} height={300} bg="#fff">
+          <RolePillStates />
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

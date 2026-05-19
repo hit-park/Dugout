@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dugout — Home Flow Storyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="dugout-screens.jsx"></script>
+<script type="text/babel" src="storyboard-kit.jsx"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',-apple-system,sans-serif; background:#F1ECE5; color:#1F1E1B; -webkit-font-smoothing:antialiased; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+function Cover() {
+  return (
+    <div style={{ width:1480, padding:'48px 56px', display:'flex', flexDirection:'column', gap:28 }}>
+      <CoverHeader
+        flowNo="②"
+        flowName="Home"
+        title={"홈 플로우\n비로그인 게이트 → 메인 대시보드"}
+        summary="앱의 첫 화면이자 매일 진입하는 거점. 팀이 없으면 Empty CTA, 팀이 있으면 다음 경기 카드 + AI 출석 예측 + 팀 공지를 노출합니다. 모든 진입은 탭바 ‘홈’ 인덱스 0에서 시작."
+        stats={[
+          { num:'2', label:'주요 화면' },
+          { num:'3', label:'팀 전환 칩 (스크롤)' },
+          { num:'4', label:'대시보드 카드 타입' },
+          { num:'1', label:'AI 위젯' },
+        ]}
+      />
+      <FlowMap
+        title="Flow Map · 홈 진입 분기"
+        rows={[
+          { nodes: [
+            { id:'APP-OPEN', label:'앱 열기', tone:'neutral' },
+            { id:'',         label:'토큰 검사', tone:'neutral', via:'' },
+          ]},
+          { indent:1, branch:'├─ 비로그인 ', nodes:[ { id:'AUTH-1', label:'Splash', tone:'brand' } ]},
+          { indent:1, branch:'├─ 팀 없음 ',   nodes:[ { id:'HOME-1', label:'홈 (Empty)', tone:'warning' }, { id:'TEAM-2', label:'팀 만들기', tone:'success', via:'CTA' } ]},
+          { indent:1, branch:'└─ 팀 있음 ',   nodes:[ { id:'HOME-2', label:'홈 (Dashboard)', tone:'brand' }, { id:'MATCH-3', label:'경기 상세', tone:'brand', via:'카드 탭' } ]},
+        ]}
+      />
+      <Legend />
+      <div style={{ padding:'14px 18px', background:TS.brandSurface, borderRadius:10, border:`1px solid ${C.p200}` }}>
+        <div style={{ fontSize:11, fontWeight:700, color:TS.brand, fontFamily:'JetBrains Mono,monospace', marginBottom:4 }}>핵심 결정</div>
+        <div style={{ fontSize:13, color:TS.text2, lineHeight:1.6 }}>
+          홈 dashboard는 <b>현재 선택된 팀 1개의 컨텍스트</b>를 보여줍니다. 칩으로 팀 전환 시 상태(데이터·AI 위젯·공지)가 통째로 갱신. 멀티팀 사용자도 하나에 집중하도록 설계.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardCardStates() {
+  const Card = ({ tone, badge, status, scaled=1, opacity=1 }) => (
+    <div style={{ width:260, background:'#fff', borderRadius:14, padding:14, boxShadow: tone==='hover' ? '0 6px 16px rgba(31,30,27,0.10)' : '0 1px 2px rgba(31,30,27,0.04)', border: tone==='pressed' ? '1.5px solid '+C.p500 : '1px solid transparent', transform:`scale(${scaled})`, opacity, transition:'all 180ms' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <span style={{ background:badge==='past' ? C.c100 : C.s100, color:badge==='past'?C.c500:C.s700, padding:'2px 8px', borderRadius:9999, fontSize:11, fontWeight:600 }}>{badge==='past'?'종료':'D-3'}</span>
+        <span style={{ fontSize:11, color:C.c500 }}>토 14:00</span>
+      </div>
+      <div style={{ fontSize:18, fontWeight:700, marginTop:8 }}>vs 청룡 BC</div>
+      <div style={{ fontSize:11, color:C.c500, marginTop:2 }}>📍 잠실 한강 야구장</div>
+      <div style={{ marginTop:12, paddingTop:10, borderTop:'1px solid '+C.c100, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <span style={{ fontSize:11, color:C.c500 }}>내 응답</span>
+        <span style={{ background:status==='참가'?'rgba(22,163,74,0.12)':C.c100, color:status==='참가'?C.success:C.c500, padding:'2px 8px', borderRadius:9999, fontSize:11, fontWeight:600 }}>{status==='참가'?'✓ 참가':'미응답'}</span>
+      </div>
+    </div>
+  );
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 경기 카드</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>홈 대시보드의 핵심 카드. 응답 상태와 경기 시점에 따라 5가지 형태로 분기.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:20, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="default" tone="neutral" note="미응답"><Card badge="upcoming" status="미응답" /></StateRow>
+        <StateRow label="answered" tone="success" note="참가 응답"><Card badge="upcoming" status="참가" /></StateRow>
+        <StateRow label="hover" tone="brand" note="shadow lg"><Card tone="hover" badge="upcoming" status="참가" /></StateRow>
+        <StateRow label="pressed" tone="success" note="ring + scale"><Card tone="pressed" badge="upcoming" status="참가" scaled={0.98} /></StateRow>
+        <StateRow label="past" tone="neutral" note="종료된 경기"><Card badge="past" status="참가" opacity={0.6} /></StateRow>
+      </div>
+    </div>
+  );
+}
+
+function TeamChipStates() {
+  const Chip = ({ bg, color, border, label, dashed=false, transform='none' }) => (
+    <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'7px 14px', borderRadius:9999, background:bg, color, fontSize:13, fontWeight:600, border:border ? `1px ${dashed?'dashed':'solid'} ${border}` : 'none', transform, transition:'all 180ms' }}>{label}</span>
+  );
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 팀 전환 칩</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>홈 상단의 가로 스크롤 칩. 현재 팀 = solid green, 그 외 팀 = white outline, 추가 = dashed.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:20, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="selected" tone="brand" note="현재 팀"><Chip bg={C.p500} color="#fff" label="⚾ 라이거스" /></StateRow>
+        <StateRow label="default" tone="neutral" note="다른 팀"><Chip bg="#fff" color={C.c700} border={C.c200} label="FC 청춘" /></StateRow>
+        <StateRow label="hover" tone="brand" note="bg cream"><Chip bg={C.c50} color={C.c700} border={C.c200} label="FC 청춘" /></StateRow>
+        <StateRow label="pressed" tone="success" note="scale 0.97"><Chip bg={C.c50} color={C.c700} border={C.c200} label="FC 청춘" transform="scale(0.97)" /></StateRow>
+        <StateRow label="add" tone="neutral" note="팀 추가 dashed"><Chip bg="#fff" color={C.c400} border={C.c200} dashed label="+ 팀 추가" /></StateRow>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas title="Dugout — Home Flow Storyboard" subtitle="② 홈 · 2 screens · AI widget · 팀 전환">
+      <FlowNav current="home.html" items={FLOW_NAV} />
+
+      <DCSection id="cover" title="00 · 표지 + 플로우 맵">
+        <DCArtboard id="cover" label="Cover" width={1480} height={900} bg="#fff">
+          <Cover />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="home" title="01 · 홈 · 분기 (HOME-1 / HOME-2)">
+        <DCArtboard id="h1" label="HOME-1 · Empty" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="HOME-1" screen="Home · Empty"
+            role="팀 없는 사용자(용병/신규)에게 ‘팀 합류’를 첫번째 행동으로 제안"
+            action="‘팀 만들기’ (primary) 또는 ‘초대 코드로 참여’ (secondary) 탭"
+            transition="팀 만들기 → TEAM-2 (slide-left) / 초대 코드 → TEAM-3"
+            copy="‘팀과 함께 시작해요’ — 위협/경고 톤 ❌. 행동 가능성을 부드럽게 제시"
+            edge="용병 모드 사용자는 매칭 탭(인덱스 2)으로 우회 가능. 안내 토스트 1회"
+            api="GET /teams/mine → [] 이면 이 화면"
+            components="empty-illust(⚾) · btn-primary · btn-secondary · btn-ghost · tab-bar(active=0)"
+          >
+            <S_HomeEmpty />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="h2" label="HOME-2 · Dashboard" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="HOME-2" screen="Home · Dashboard"
+            role="앱의 메인 대시보드. 다음 경기 · AI 예측 · 팀 공지를 한 스크롤에 압축."
+            action="① 팀 칩 스크롤·탭으로 팀 전환  ② 경기 카드 탭으로 상세 진입  ③ 알림 아이콘 탭으로 알림 센터"
+            transition="팀 칩 → 데이터 페치 + skeleton 280ms / 경기 카드 → MATCH-3 (slide-left 420ms) / 알림 → NOTIF-CENTER"
+            copy="‘안녕하세요 / 김주장 님’ 인사. 시간대별 가변 X — 단순함 유지"
+            edge="다음 경기 없음 → 경기 카드 자리에 ‘예정 경기 없음’ secondary card / 알림 없음 → 빨간 점 숨김"
+            api="GET /home/dashboard?teamId=… → {nextMatch, aiPrediction, notices[]}"
+            components="large-nav(인사+알림) · team-chip-scroll · match-card · ai-card(p50 bg) · notice-card · tab-bar(active=0)"
+          >
+            <S_HomeDashboard />
+          </ScreenWithNotes>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states-card" title="02 · 상태 갤러리 · 경기 카드">
+        <DCArtboard id="sg1" label="Match Card States" width={1480} height={420} bg="#fff">
+          <DashboardCardStates />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states-chip" title="03 · 상태 갤러리 · 팀 전환 칩">
+        <DCArtboard id="sg2" label="Team Chip States" width={1480} height={340} bg="#fff">
+          <TeamChipStates />
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dugout — Flow Storyboard Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  :root {
+    --p500:#2D8A4E; --p600:#236F40; --p100:#C8E6D2; --p50:#E8F5EE;
+    --c0:#fff; --c50:#FAF7F4; --c100:#F1ECE5; --c200:#E0DAD0;
+    --c400:#9A9389; --c500:#73706A; --c700:#46443F; --c900:#1F1E1B;
+    --s500:#D27640; --s700:#974D24; --s100:#FADBC4;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--c100); color:var(--c900); -webkit-font-smoothing:antialiased; min-height:100vh; }
+  .mono { font-family:'JetBrains Mono','SF Mono',monospace; }
+
+  .shell { max-width:1240px; margin:0 auto; padding:80px 56px 120px; }
+  .hero {
+    display:flex; flex-direction:column; gap:18px; margin-bottom:56px;
+  }
+  .eyebrow { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--p600); font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+  h1 { font-size:56px; font-weight:800; letter-spacing:-1.5px; line-height:1.05; }
+  .lede { font-size:17px; color:var(--c500); max-width:720px; line-height:1.6; }
+  .meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; font-family:'JetBrains Mono',monospace; font-size:11px; }
+  .meta span { padding:6px 12px; background:#fff; border:1px solid var(--c200); border-radius:8px; color:var(--c700); }
+  .meta span b { color:var(--c900); font-weight:700; }
+
+  .grid {
+    display:grid; grid-template-columns:repeat(2, 1fr); gap:18px;
+  }
+
+  .card {
+    background:#fff; border:1px solid var(--c200); border-radius:20px;
+    padding:32px 32px 28px; display:flex; flex-direction:column; gap:16px;
+    text-decoration:none; color:inherit;
+    transition: transform 180ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 180ms, border-color 180ms;
+    position:relative;
+  }
+  .card:hover { transform:translateY(-3px); box-shadow:0 12px 28px rgba(31,30,27,0.08); border-color:var(--p200); }
+  .card .num { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--p600); font-weight:700; letter-spacing:1.2px; }
+  .card h2 { font-size:28px; font-weight:700; letter-spacing:-0.5px; }
+  .card .sub { font-size:14px; color:var(--c500); line-height:1.55; }
+  .card .stats { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+  .card .stats span { padding:4px 10px; background:var(--c50); border:1px solid var(--c200); border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--c700); }
+  .card .stats span b { color:var(--p600); font-weight:700; }
+  .card .arrow { position:absolute; top:32px; right:32px; width:36px; height:36px; border-radius:18px; background:var(--c50); color:var(--c500); display:flex; align-items:center; justify-content:center; font-size:18px; transition: all 180ms; }
+  .card:hover .arrow { background:var(--p500); color:#fff; transform:translateX(4px); }
+  .card .preview { display:flex; gap:6px; align-items:flex-end; height:80px; margin-top:8px; }
+  .card .preview .frame { background:var(--c50); border:1px solid var(--c200); border-radius:8px; flex:1; }
+
+  .section-head {
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-top:64px; margin-bottom:20px;
+  }
+  .section-head h3 { font-size:13px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--c500); font-family:'JetBrains Mono',monospace; }
+  .section-head .count { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--c400); }
+
+  .ref-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+  .ref-card {
+    background:#fff; border:1px solid var(--c200); border-radius:14px;
+    padding:18px 20px; text-decoration:none; color:inherit;
+    display:flex; flex-direction:column; gap:6px;
+    transition: border-color 180ms, transform 180ms;
+  }
+  .ref-card:hover { border-color:var(--p200); transform:translateY(-2px); }
+  .ref-card .l { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--c500); font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+  .ref-card .t { font-size:15px; font-weight:600; }
+  .ref-card .d { font-size:12px; color:var(--c500); line-height:1.45; }
+
+  .legend-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:24px; }
+  .legend-row .pill { padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700; font-family:'JetBrains Mono',monospace; }
+
+  .footer { margin-top:64px; padding-top:24px; border-top:1px solid var(--c200); font-size:12px; color:var(--c400); display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  .footer code { font-family:'JetBrains Mono',monospace; background:var(--c0); padding:2px 8px; border-radius:4px; border:1px solid var(--c200); color:var(--c700); }
+</style>
+</head>
+<body>
+<main class="shell">
+
+  <section class="hero">
+    <div class="eyebrow">Dugout · Flow Storyboards v1</div>
+    <h1>전체 플로우<br/>스토리보드 가이드</h1>
+    <p class="lede">
+      Dugout 앱의 6개 핵심 플로우에 대한 화면별 어노테이션 가이드.
+      각 화면은 <b>역할 · 액션 · 전환 · 카피 · 컴포넌트 · API · 엣지 케이스</b> 6가지 정보와 함께
+      <b>상태 갤러리</b>(default·hover·pressed·disabled·error 등)를 포함합니다.
+      Claude Code는 이 문서를 시각 참조로 사용해 실제 화면을 코드로 구현할 수 있습니다.
+    </p>
+    <div class="meta">
+      <span>Frame · <b>320 × 692</b></span>
+      <span>Token · <b>Green #2D8A4E / Cream</b></span>
+      <span>Font · <b>Pretendard</b></span>
+      <span>Source · <b>Dugout Design Spec.html</b></span>
+      <span>Total · <b>24 screens · 6 flows</b></span>
+    </div>
+  </section>
+
+  <div class="section-head">
+    <h3>Flow Storyboards</h3>
+    <span class="count">6 documents</span>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="auth.html">
+      <div class="arrow">›</div>
+      <div class="num">① AUTH</div>
+      <h2>인증 플로우</h2>
+      <p class="sub">앱 진입 → 소셜 로그인 4종 → 닉네임·포지션·시작 모드 3단 온보딩. 분기 후 팀 생성·팀 참가·용병 모드로 갈라집니다.</p>
+      <div class="stats">
+        <span><b>5</b> screens</span>
+        <span><b>4</b> OAuth</span>
+        <span><b>3</b> 온보딩</span>
+        <span><b>3</b> edge</span>
+      </div>
+    </a>
+
+    <a class="card" href="home.html">
+      <div class="arrow">›</div>
+      <div class="num">② HOME</div>
+      <h2>홈 플로우</h2>
+      <p class="sub">팀 없음 → Empty CTA, 팀 있음 → 다음 경기 + AI 출석 예측 + 팀 공지. 멀티팀 사용자는 상단 칩으로 컨텍스트 전환.</p>
+      <div class="stats">
+        <span><b>2</b> screens</span>
+        <span><b>1</b> AI widget</span>
+        <span><b>3</b> 카드 타입</span>
+      </div>
+    </a>
+
+    <a class="card" href="team.html">
+      <div class="arrow">›</div>
+      <div class="num">③ TEAM</div>
+      <h2>팀 플로우</h2>
+      <p class="sub">팀 목록 → 생성 또는 참가(6자리 코드/QR) → 상세 → 멤버 권한 변경. 4가지 역할(주장·매니저·회계·일반)로 권한 분리.</p>
+      <div class="stats">
+        <span><b>5</b> screens</span>
+        <span><b>4</b> roles</span>
+        <span><b>2</b> 참여 방식</span>
+      </div>
+    </a>
+
+    <a class="card" href="match.html">
+      <div class="arrow">›</div>
+      <div class="num">④ MATCH</div>
+      <h2>경기 플로우</h2>
+      <p class="sub">일정(캘린더/리스트) → 등록(주장) → 상세 + AI 예측 → 출석 응답(3+2옵션) → 요약(주장). 앱의 가장 빈번한 사이클.</p>
+      <div class="stats">
+        <span><b>5</b> screens</span>
+        <span><b>3+2</b> 응답 옵션</span>
+        <span><b>24h</b> 마감</span>
+      </div>
+    </a>
+
+    <a class="card" href="my.html">
+      <div class="arrow">›</div>
+      <div class="num">⑤ MY</div>
+      <h2>마이 · 알림 플로우</h2>
+      <p class="sub">프로필 · 소속 팀 · 알림 설정 · 계정 관리 + 전역 알림 센터. 팀별 그룹핑된 알림은 카드 탭으로 해당 화면에 딥링크.</p>
+      <div class="stats">
+        <span><b>2</b> screens</span>
+        <span><b>4</b> 설정</span>
+        <span><b>3</b> 알림 타입</span>
+      </div>
+    </a>
+
+    <a class="card" href="states.html">
+      <div class="arrow">›</div>
+      <div class="num">⑥ STATES</div>
+      <h2>전역 상태 표준</h2>
+      <p class="sub">Empty · Loading · Error · Skeleton 4가지 화면 상태 + Primary·Secondary·Destructive 버튼의 6상태 + 토스트 4톤.</p>
+      <div class="stats">
+        <span><b>4</b> 화면 상태</span>
+        <span><b>3×6</b> 버튼</span>
+        <span><b>4</b> 토스트</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="section-head">
+    <h3>참고 자료 · Reference</h3>
+    <span class="count">읽기 전용</span>
+  </div>
+
+  <div class="ref-grid">
+    <a class="ref-card" href="../Dugout Design Spec.html">
+      <span class="l">Source · Tokens</span>
+      <span class="t">Dugout Design Spec</span>
+      <span class="d">컬러 · 타이포 · 스페이싱 · 컴포넌트 anatomy. 모든 토큰의 단일 소스.</span>
+    </a>
+    <a class="ref-card" href="../Dugout Flow v3.html">
+      <span class="l">Source · Screens</span>
+      <span class="t">Dugout Flow v3</span>
+      <span class="d">24개 화면의 원본 React 시안. 본 스토리보드의 화면 컴포넌트 출처.</span>
+    </a>
+    <a class="ref-card" href="../onboarding/Onboarding Storyboard.html">
+      <span class="l">Reference</span>
+      <span class="t">Onboarding Storyboard</span>
+      <span class="d">본 문서의 디자인·서식 출처가 된 온보딩 11스크린 스토리보드.</span>
+    </a>
+  </div>
+
+  <div class="legend-row">
+    <span class="pill" style="background:rgba(45,138,78,0.10); color:#236F40;">역할 · 화면의 의도</span>
+    <span class="pill" style="background:rgba(22,163,74,0.12); color:#16A34A;">액션 · 사용자 행동</span>
+    <span class="pill" style="background:rgba(124,58,237,0.10); color:#7C3AED;">전환 · 다음 화면 · 모션</span>
+    <span class="pill" style="background:rgba(210,118,64,0.15); color:#974D24;">카피 · 마이크로카피</span>
+    <span class="pill" style="background:rgba(220,38,38,0.10); color:#DC2626;">엣지 · 예외 처리</span>
+    <span class="pill" style="background:rgba(0,0,0,0.06); color:#46443F;">컴포넌트 · API · 구현 힌트</span>
+  </div>
+
+  <div class="footer">
+    <div>Dugout Flow Storyboards · 6 docs · 24 screens · v1.0 · 2026.05</div>
+    <div>For Claude Code: 각 화면의 어노테이션 카드를 화면 구현 spec으로 사용하세요.</div>
+  </div>
+
+</main>
+</body>
+</html>

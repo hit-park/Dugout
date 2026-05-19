@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dugout — My Flow Storyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="dugout-screens.jsx"></script>
+<script type="text/babel" src="storyboard-kit.jsx"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',-apple-system,sans-serif; background:#F1ECE5; color:#1F1E1B; -webkit-font-smoothing:antialiased; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+function Cover() {
+  return (
+    <div style={{ width:1480, padding:'48px 56px', display:'flex', flexDirection:'column', gap:28 }}>
+      <CoverHeader
+        flowNo="⑤"
+        flowName="My"
+        title={"마이 · 알림 플로우\n프로필 · 설정 · 알림 센터"}
+        summary="저빈도지만 신뢰의 거점. 프로필·소속 팀·알림 설정·계정 관리 + 모든 알림을 팀별 그룹핑하여 노출. 위험 액션(로그아웃)은 빨간 텍스트로만 표시."
+        stats={[
+          { num:'2', label:'화면' },
+          { num:'4', label:'설정 메뉴 행' },
+          { num:'2', label:'알림 그룹 (팀별)' },
+          { num:'3', label:'알림 타입 (경기·회비·일반)' },
+        ]}
+      />
+      <FlowMap
+        title="Flow Map · 마이 · 알림"
+        rows={[
+          { nodes:[
+            { id:'MY-1', label:'마이페이지', tone:'brand' },
+          ]},
+          { indent:1, branch:'├─ 프로필 ', nodes:[ { id:'',  label:'프로필 편집', tone:'neutral', via:'카드 탭' } ]},
+          { indent:1, branch:'├─ 소속 팀 ', nodes:[ { id:'TEAM-1', label:'팀 목록', tone:'brand', via:'행 탭' } ]},
+          { indent:1, branch:'├─ 알림 설정 ', nodes:[ { id:'', label:'채널별 토글', tone:'neutral', via:'행 탭' } ]},
+          { indent:1, branch:'└─ 알림 센터 ', nodes:[ { id:'MY-2', label:'알림 (전역)', tone:'brand', via:'벨 아이콘' }, { id:'MATCH-3', label:'경기 상세', tone:'success', via:'알림 탭' } ]},
+        ]}
+      />
+      <Legend />
+    </div>
+  );
+}
+
+function MenuRowStates() {
+  const Row = ({ bg='transparent', label='소속 팀', right='2개 ›', opacity=1 }) => (
+    <div style={{ width:280, padding:'13px 14px', display:'flex', justifyContent:'space-between', alignItems:'center', background:bg, borderRadius:12, opacity, transition:'all 120ms' }}>
+      <span style={{ fontSize:13, color:C.c900 }}>{label}</span>
+      <span style={{ fontSize:12, color:C.c500 }}>{right}</span>
+    </div>
+  );
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 설정 메뉴 행</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>iOS Settings 스타일 list row. 우측 보조 텍스트 + chevron.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:24, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="default" tone="neutral"><Row /></StateRow>
+        <StateRow label="hover" tone="brand" note="bg cream-50"><Row bg={C.c50} /></StateRow>
+        <StateRow label="pressed" tone="success" note="bg cream-100"><Row bg={C.c100} /></StateRow>
+        <StateRow label="disabled" tone="neutral" note="opacity 0.4"><Row right="설정 ›" opacity={0.4} /></StateRow>
+      </div>
+    </div>
+  );
+}
+
+function NotifTypeStates() {
+  const N = ({ icon, color, accent, title, sub, time }) => (
+    <div style={{ width:280, background: accent ? C.p50 : '#fff', borderRadius:12, padding:12, display:'flex', gap:8, boxShadow: accent ? 'none' : '0 1px 2px rgba(31,30,27,0.04)', borderLeft: accent ? `3px solid ${color}` : 'none' }}>
+      <span style={{ fontSize:18 }}>{icon}</span>
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:13, fontWeight: accent ? 600 : 400 }}>{title}</div>
+        <div style={{ fontSize:11, color:C.c500, marginTop:2 }}>{sub}</div>
+        {time && <div style={{ fontSize:10, color:C.c400, marginTop:4 }}>{time}</div>}
+      </div>
+    </div>
+  );
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 알림 카드 타입</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>안 읽음(accent 좌측 바) vs 읽음(white). 카테고리(경기/회비/일반)별 아이콘 통일.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:24, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="unread · match" tone="brand" note="bg p50 + bar"><N icon="📅" color={C.p500} accent title="새 경기 일정 등록" sub="5/10 (토) 14:00" time="2시간 전" /></StateRow>
+        <StateRow label="read · match" tone="neutral"><N icon="⏰" color={C.p500} title="출석 투표 24시간 전" sub="vs 청룡 BC" time="어제" /></StateRow>
+        <StateRow label="unread · finance" tone="warning" note="회비"><N icon="💰" color={TS.warning} accent title="5월 회비 미납 안내" sub="25,000원 · 5/15 까지" time="3일 전" /></StateRow>
+        <StateRow label="read · general" tone="neutral"><N icon="📢" color={C.c500} title="팀 공지 등록" sub="회식 안내드립니다" time="1주 전" /></StateRow>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas title="Dugout — My · Notification Flow Storyboard" subtitle="⑤ 마이 · 2 screens · settings + notif center">
+      <FlowNav current="my.html" items={FLOW_NAV} />
+
+      <DCSection id="cover" title="00 · 표지 + 플로우 맵">
+        <DCArtboard id="cover" label="Cover" width={1480} height={860} bg="#fff">
+          <Cover />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="my" title="01 · 마이페이지 · 알림 (MY-1 ~ MY-2)">
+        <DCArtboard id="my1" label="MY-1 · 마이페이지" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="MY-1" screen="My Page"
+            role="프로필 · 설정 진입점. 변경 빈도가 낮으므로 시각적 단순성 최우선."
+            action="① 프로필 카드 탭 → 편집  ② 메뉴 행 4종 탭  ③ ‘로그아웃’ (위험)"
+            transition="프로필 → slide-left 420ms. 로그아웃 → 네이티브 alert 확인 → splash로 복귀"
+            copy="‘카카오로 로그인됨’ — OAuth 프로바이더 명시. 보안 인식 강화"
+            edge="익명/용병 사용자 = ‘소속 팀’ 행 dim + ‘팀 합류하기’ ghost 변경"
+            api="GET /users/me · POST /auth/logout"
+            components="profile-row · settings-list(4) · btn-destructive · tab-bar(active=4)"
+          >
+            <S_MyPage />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="my2" label="MY-2 · 알림 센터" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="MY-2" screen="Notification Center"
+            role="전역 알림. 팀별 그룹 + 시간순 + 안읽음 표시"
+            action="① 알림 카드 탭 → 해당 화면으로 딥링크  ② ‘모두 읽음’ 우상단"
+            transition="카드 탭 → MATCH-3 / TEAM-DETAIL 등. 모두 읽음 → 모든 accent 제거 (180ms fade)"
+            copy="‘모두 읽음’ vs ‘전체 읽음’ — iOS 표준 ‘모두 읽음’ 채택"
+            edge="알림 없음 → empty state ‘새 알림이 없어요’ / 권한 거부 시 ‘설정에서 허용’ 배너"
+            api="GET /users/me/notifications · POST /users/me/notifications/read-all"
+            components="nav-modal · group-header(team) · notif-card(unread/read)×N"
+          >
+            <S_NotifCenter />
+          </ScreenWithNotes>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states-row" title="02 · 상태 갤러리 · 설정 메뉴 행">
+        <DCArtboard id="sg1" label="Menu Row States" width={1480} height={300} bg="#fff">
+          <MenuRowStates />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states-notif" title="03 · 상태 갤러리 · 알림 카드">
+        <DCArtboard id="sg2" label="Notif Card States" width={1480} height={360} bg="#fff">
+          <NotifTypeStates />
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

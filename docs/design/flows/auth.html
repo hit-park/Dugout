@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dugout — Auth Flow Storyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="dugout-screens.jsx"></script>
+<script type="text/babel" src="storyboard-kit.jsx"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',-apple-system,sans-serif; background:#F1ECE5; color:#1F1E1B; -webkit-font-smoothing:antialiased; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+function Cover() {
+  return (
+    <div style={{ width:1480, padding:'48px 56px', display:'flex', flexDirection:'column', gap:28 }}>
+      <CoverHeader
+        flowNo="①"
+        flowName="Auth"
+        title={"인증 플로우\n비회원 → 가입 완료"}
+        summary="앱 첫 진입부터 온보딩 3단계까지. 카카오·네이버·Apple·Google 4종 소셜 로그인 + 닉네임·포지션·시작 모드 3단 온보딩. 모든 화면은 Pretendard / Green #2D8A4E / Cream BG 토큰을 따릅니다."
+        stats={[
+          { num:'5', label:'화면' },
+          { num:'4', label:'OAuth 프로바이더' },
+          { num:'3', label:'온보딩 단계' },
+          { num:'3', label:'엣지 케이스' },
+        ]}
+      />
+      <FlowMap
+        title="Flow Map · 1차 가입 동선"
+        rows={[
+          { nodes: [
+            { id:'AUTH-1', label:'Splash',     tone:'brand' },
+            { id:'AUTH-2', label:'Login',      tone:'brand', via:'⚾탭' },
+            { id:'AUTH-3', label:'1/3 닉네임', tone:'brand', via:'OAuth 성공' },
+            { id:'AUTH-4', label:'2/3 포지션', tone:'brand', via:'다음' },
+            { id:'AUTH-5', label:'3/3 시작 방법', tone:'brand', via:'다음' },
+          ]},
+          { indent:5, branch:'└─→ 팀 만들기 ', nodes:[ { id:'TEAM-2', label:'팀 생성', tone:'success' } ]},
+          { indent:5, branch:'└─→ 팀 참가 ',   nodes:[ { id:'TEAM-3', label:'초대 코드', tone:'success' } ]},
+          { indent:5, branch:'└─→ 용병 ',      nodes:[ { id:'HOME-1', label:'홈 (Empty)', tone:'neutral' } ]},
+        ]}
+      />
+      <Legend />
+      <div style={{ padding:'14px 18px', background:'rgba(220,38,38,0.06)', borderRadius:10, border:'1px solid rgba(220,38,38,0.18)' }}>
+        <div style={{ fontSize:11, fontWeight:700, color:TS.danger, fontFamily:'JetBrains Mono,monospace', marginBottom:4 }}>구현 주의</div>
+        <div style={{ fontSize:13, color:TS.text2, lineHeight:1.6 }}>
+          OAuth 콜백은 <code style={{ fontFamily:'JetBrains Mono,monospace', background:C.c100, padding:'1px 6px', borderRadius:4 }}>/auth/callback</code>에서 처리. 신규 사용자만 온보딩 진입, 기존 사용자는 <code style={{ fontFamily:'JetBrains Mono,monospace', background:C.c100, padding:'1px 6px', borderRadius:4 }}>/home</code> 직행. 온보딩 중 이탈 시 단계별 progress를 <code style={{ fontFamily:'JetBrains Mono,monospace', background:C.c100, padding:'1px 6px', borderRadius:4 }}>users.onboardingStep</code>에 저장.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── state gallery: login button states ─── */
+function LoginButtonStates() {
+  const Btn = ({ bg, color, label, state, opacity=1, transform='none', shadow='none' }) => (
+    <button style={{ padding:'14px 22px', borderRadius:12, background:bg, color, fontWeight:700, fontSize:15, border:'none', cursor:'pointer', minWidth:220, opacity, transform, boxShadow:shadow, transition:'all 180ms cubic-bezier(0.34,1.56,0.64,1)' }}>{label}</button>
+  );
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 소셜 로그인 버튼</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>카카오 노란색을 기준으로 동일한 패턴이 네이버·Apple·Google에도 적용됩니다.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:24, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="default" tone="neutral" note="bg #FEE500">
+          <Btn bg="#FEE500" color="#3C1E1E" label="카카오로 시작하기" />
+        </StateRow>
+        <StateRow label="hover" tone="brand" note="brightness 0.96">
+          <Btn bg="#F0D900" color="#3C1E1E" label="카카오로 시작하기" />
+        </StateRow>
+        <StateRow label="pressed" tone="success" note="scale 0.97">
+          <Btn bg="#F0D900" color="#3C1E1E" label="카카오로 시작하기" transform="scale(0.97)" />
+        </StateRow>
+        <StateRow label="loading" tone="warning" note="spinner replace">
+          <Btn bg="#FEE500" color="#3C1E1E" label="⟳ 로그인 중…" />
+        </StateRow>
+        <StateRow label="disabled" tone="danger" note="opacity 0.5">
+          <Btn bg="#FEE500" color="#3C1E1E" label="카카오로 시작하기" opacity={0.5} />
+        </StateRow>
+      </div>
+    </div>
+  );
+}
+
+/* ─── state gallery: nickname input states ─── */
+function NicknameInputStates() {
+  const Input = ({ border, val, hint, hintColor, focus }) => (
+    <div style={{ display:'flex', flexDirection:'column', gap:6, minWidth:240 }}>
+      <label style={{ fontSize:11, fontWeight:600, color:TS.text2, fontFamily:'JetBrains Mono,monospace' }}>닉네임</label>
+      <input defaultValue={val} placeholder="닉네임을 입력하세요" style={{ padding:'12px 14px', borderRadius:10, background:focus?'#fff':C.c50, border:`${border.includes(C.p500)||border.includes(C.danger)?1.5:1}px solid ${border}`, fontSize:14, outline:'none', boxShadow: focus ? `0 0 0 3px ${C.p500}22` : 'none' }} />
+      {hint && <div style={{ fontSize:11, color:hintColor }}>{hint}</div>}
+    </div>
+  );
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 닉네임 입력</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>온보딩 1/3 단계. 600ms 디바운스 후 서버 검증 → 5가지 결과 상태.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:24, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="empty" tone="neutral"><Input border={C.c200} val="" /></StateRow>
+        <StateRow label="focus" tone="brand" note="ring 3px"><Input border={C.p500} val="김주" focus /></StateRow>
+        <StateRow label="valid" tone="success" note="✓ 사용 가능"><Input border={C.p500} val="김주장" hint="✓ 사용 가능한 닉네임이에요" hintColor={C.p500} /></StateRow>
+        <StateRow label="taken" tone="danger" note="중복 감지"><Input border={C.danger} val="라이거스" hint="이미 사용 중이에요" hintColor={C.danger} /></StateRow>
+        <StateRow label="invalid" tone="warning" note="부적절 단어"><Input border={C.danger} val="시발" hint="사용할 수 없는 단어예요" hintColor={C.danger} /></StateRow>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas title="Dugout — Auth Flow Storyboard" subtitle="① 인증 · 5 screens · 3 edge cases · token spec">
+      <FlowNav current="auth.html" items={FLOW_NAV} />
+
+      <DCSection id="cover" title="00 · 표지 + 플로우 맵">
+        <DCArtboard id="cover" label="Cover" width={1480} height={920} bg="#fff">
+          <Cover />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="entry" title="01 · 진입 · OAuth (AUTH-1 ~ AUTH-2)">
+        <DCArtboard id="a1" label="AUTH-1 · Splash" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="AUTH-1" screen="Splash"
+            role="브랜드 노출 + 자동 라우팅. 비로그인 사용자는 2.4초 후 Login 화면으로 자동 전환."
+            action="없음. 화면 탭 시 즉시 Login 전환 (대기 시간 단축)."
+            transition="2.4s 후 fade-out 280ms → AUTH-2 Login. 토큰 존재 시 → HOME-2."
+            copy="‘야구팀 운영의 모든 것’ — 카테고리부터 분명히. 마케팅 어조 ❌"
+            edge="딥링크로 진입 시 splash 생략, 로그인 후 원래 URL로 복귀"
+            components="ic-logo(72) · type-display(30/700) · bg=primary-500"
+          >
+            <S_Splash />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="a2" label="AUTH-2 · Login" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="AUTH-2" screen="Login"
+            role="OAuth 4종 + 비로그인 둘러보기 1종. 한국 사용자 → 카카오/네이버 우선 노출."
+            action="소셜 버튼 탭 → OS WebView로 OAuth 리디렉션"
+            transition="버튼 tap (120ms) → spinner overlay → 콜백 (1~3s) → 신규: AUTH-3 / 기존: HOME-2"
+            copy="‘OO으로 시작하기’로 통일. ‘로그인’ vs ‘시작’ 중 후자만 사용."
+            edge="카카오톡 미설치 시 웹뷰 fallback / 3회 실패 시 ‘문의하기’ 노출"
+            api="POST /auth/oauth/{provider} → returns {accessToken, isNew}"
+            components="btn-social(kakao/naver/apple/google) · btn-ghost(둘러보기)"
+          >
+            <S_Login />
+          </ScreenWithNotes>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="onboard" title="02 · 온보딩 3단계 (AUTH-3 ~ AUTH-5)">
+        <DCArtboard id="a3" label="AUTH-3 · 1/3 닉네임" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="AUTH-3" screen="Onboarding · 닉네임"
+            role="유저 식별자 확보. 등번호는 선택값으로 부담 최소화."
+            action="닉네임 입력 (focus 즉시 검증 시작) · 등번호 입력 (선택) · 다음 탭"
+            transition="값 변경 → 600ms debounce → GET /users/check-nickname. 다음 → AUTH-4 (slide-left 420ms)"
+            copy="‘팀원들에게 보일 이름’ = 닉네임의 사회적 노출 인지"
+            edge="중복: ‘이미 사용 중이에요’ + 추천 칩 3개 / 부적절 단어: 로컬 사전으로 즉시 차단"
+            api="GET /users/check-nickname?q={text} · PATCH /users/me"
+            components="progress-bar(1/3) · input(text, focus) · input(text, optional)"
+          >
+            <S_OnboardNickname />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="a4" label="AUTH-4 · 2/3 포지션" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="AUTH-4" screen="Onboarding · 포지션"
+            role="라인업 AI의 핵심 입력. 주 포지션 1개 + 서브 다중."
+            action="3×3 그리드에서 주 포지션 단일 선택 → 자동으로 서브 후보 갱신 · 서브 칩 다중 토글"
+            transition="포지션 탭 → spring 180ms 오버슛(0.34,1.56,0.64,1). 다음 → AUTH-5"
+            copy="‘라인업 추천에 사용돼요’ — 데이터 사용처 명시로 정확한 입력 유도"
+            edge="‘잘 모르겠어요’ ghost CTA(향후 추가) → 주포지션 null로 진행 가능"
+            api="PATCH /users/me/position {main, subs[]}"
+            components="progress-bar(2/3) · pos-card(9 grid) · pos-chip(8 toggles)"
+          >
+            <S_OnboardPosition />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="a5" label="AUTH-5 · 3/3 시작 방법" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="AUTH-5" screen="Onboarding · 시작 모드"
+            role="플로우 분기 — 팀 생성 / 팀 참가 / 용병 모드"
+            action="3개 카드 중 1개 탭 → 즉시 다음 화면 (별도 ‘다음’ 버튼 없음)"
+            transition="팀 만들기 → TEAM-2 / 팀 참가 → TEAM-3 / 용병 → HOME-1 (Empty home)"
+            copy="동사형 헤드라인. ‘어떻게 시작하시겠어요?’ — 사용자 결정 유도"
+            edge="‘나중에 결정하기’ ghost → onboardingStep=3 저장 후 HOME-1으로. 홈에서 동일 카드 재노출"
+            api="PATCH /users/me/onboarding {step:3, startMode}"
+            components="progress-bar(3/3) · big-card(icon+title+sub)×3 · btn-ghost(나중에)"
+          >
+            <S_OnboardChoose />
+          </ScreenWithNotes>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states-btn" title="03 · 상태 갤러리 · 버튼">
+        <DCArtboard id="sg1" label="Social Login Button States" width={1480} height={360} bg="#fff">
+          <LoginButtonStates />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states-input" title="04 · 상태 갤러리 · 닉네임 입력">
+        <DCArtboard id="sg2" label="Nickname Input States" width={1480} height={360} bg="#fff">
+          <NicknameInputStates />
+        </DCArtboard>
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

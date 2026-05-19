@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dugout — Design Spec (Figma-ready)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+:root {
+  /* tokens — single source of truth */
+  --p50:#E8F5EE; --p100:#C8E6D2; --p200:#9FD3B0; --p300:#73BE8B;
+  --p400:#4CA86B; --p500:#2D8A4E; --p600:#236F40; --p700:#1A5532;
+  --p800:#123E25; --p900:#0B2917;
+  --s50:#FDF1E8; --s100:#FADBC4; --s300:#F0B083; --s500:#D27640;
+  --s700:#974D24; --s900:#4A2510;
+  --c0:#FFFFFF; --c50:#FAF7F4; --c100:#F1ECE5; --c200:#E0DAD0;
+  --c300:#C2BBAF; --c400:#9A9389; --c500:#73706A; --c700:#46443F; --c900:#1F1E1B;
+  --success:#16A34A; --warning:#D97706; --danger:#DC2626; --info:#2563EB;
+
+  /* spec markers */
+  --redline:#E25A4A;
+  --bluedot:#3478F6;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  font-family:'Pretendard', -apple-system, system-ui, sans-serif;
+  background:var(--c100); color:var(--c900);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.5;
+}
+.mono { font-family:'JetBrains Mono', monospace; }
+
+/* ─── shell ─── */
+.shell { display:grid; grid-template-columns: 240px 1fr; min-height:100vh; }
+
+/* sidebar */
+.sidebar {
+  background:var(--c0); border-right:1px solid var(--c200);
+  padding:24px 20px; position:sticky; top:0; height:100vh; overflow-y:auto;
+}
+.sidebar .brand {
+  font-size:14px; font-weight:700;
+  display:flex; align-items:center; gap:8px;
+}
+.sidebar .brand .dot { width:8px; height:8px; border-radius:4px; background:var(--p500); }
+.sidebar .v { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--c500); margin-top:2px; }
+.sidebar nav { margin-top:24px; display:flex; flex-direction:column; gap:1px; }
+.sidebar nav .group {
+  font-size:10px; font-weight:600; color:var(--c400);
+  letter-spacing:1.2px; text-transform:uppercase;
+  padding:14px 8px 6px;
+}
+.sidebar nav a {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 8px; border-radius:6px;
+  font-size:13px; color:var(--c700); text-decoration:none;
+}
+.sidebar nav a:hover { background:var(--c50); color:var(--c900); }
+.sidebar nav a .n { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--c400); width:18px; }
+
+/* main page */
+.main { padding:0; }
+.page { max-width:1080px; padding:48px 56px 96px; margin:0 auto; }
+
+.hero { padding:64px 56px 32px; max-width:1080px; margin:0 auto; }
+.hero .eyebrow {
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px; color:var(--p600); font-weight:600;
+  letter-spacing:1.5px; text-transform:uppercase;
+}
+.hero h1 {
+  font-size:44px; font-weight:800; letter-spacing:-1.2px;
+  margin-top:10px; line-height:1.05;
+}
+.hero p {
+  font-size:14px; color:var(--c500);
+  max-width:580px; margin-top:14px; line-height:1.55;
+}
+.hero .meta {
+  margin-top:22px; display:flex; gap:8px; flex-wrap:wrap;
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+}
+.hero .meta span {
+  padding:5px 10px; background:var(--c0); border:1px solid var(--c200);
+  border-radius:6px; color:var(--c700);
+}
+.hero .meta span b { color:var(--c900); font-weight:600; }
+
+/* section frame */
+.frame {
+  background:var(--c0); border-radius:20px; border:1px solid var(--c200);
+  padding:40px 44px; margin-bottom:32px;
+}
+.frame-head { margin-bottom:28px; padding-bottom:18px; border-bottom:1px solid var(--c100); }
+.frame-head .eyebrow {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:var(--p600); font-weight:600;
+  letter-spacing:1.5px; text-transform:uppercase;
+}
+.frame-head h2 {
+  font-size:26px; font-weight:700; letter-spacing:-0.6px;
+  margin-top:6px;
+}
+.frame-head p { font-size:13px; color:var(--c500); margin-top:6px; max-width:600px; }
+
+.frame h3 {
+  font-size:13px; font-weight:700;
+  letter-spacing:-0.1px; margin-bottom:14px;
+  display:flex; align-items:center; gap:7px;
+  text-transform:uppercase; letter-spacing:1px;
+  color:var(--c700);
+}
+.frame h3::before {
+  content:''; width:3px; height:11px; background:var(--p500); border-radius:2px;
+}
+.frame .section + .section { margin-top:36px; }
+
+/* ─── COLOR — swatches ─── */
+.swatches { display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; }
+.sw {
+  display:flex; flex-direction:column;
+  border-radius:10px; overflow:hidden;
+  border:1px solid var(--c200);
+  background:var(--c0);
+}
+.sw .chip { height:80px; }
+.sw .body { padding:9px 11px 11px; }
+.sw .name {
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px; font-weight:600; color:var(--c900);
+}
+.sw .hex {
+  font-family:'JetBrains Mono', monospace;
+  font-size:10px; color:var(--c500); margin-top:1px;
+}
+.sw .use { font-size:10px; color:var(--c500); margin-top:5px; line-height:1.4; }
+
+/* ─── TYPE ─── */
+.type-row {
+  display:grid; grid-template-columns: 1fr 280px;
+  gap:32px; padding:18px 0;
+  border-bottom:1px solid var(--c100); align-items:center;
+}
+.type-row:last-child { border-bottom:none; }
+.type-row .demo {
+  color:var(--c900); font-family:'Pretendard',sans-serif;
+}
+.type-row .spec {
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+  color:var(--c500); display:flex; flex-direction:column; gap:3px;
+}
+.type-row .spec b { color:var(--c900); font-weight:600; }
+.type-row .spec .name { color:var(--p700); font-weight:600; }
+
+/* ─── SPACING ─── */
+.scale { display:flex; align-items:flex-end; gap:20px; padding:16px 0; }
+.scale-item { display:flex; flex-direction:column; align-items:center; gap:10px; }
+.scale-item .bar { background:var(--p500); border-radius:2px; }
+.scale-item .v {
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px; color:var(--c700);
+}
+.scale-item .n {
+  font-family:'JetBrains Mono', monospace;
+  font-size:9px; color:var(--c400);
+}
+
+/* ─── RADIUS ─── */
+.radii { display:flex; gap:18px; flex-wrap:wrap; }
+.radii .item {
+  text-align:center;
+}
+.radii .box {
+  width:64px; height:64px; background:var(--p100);
+  border:1px solid var(--p300);
+  margin-bottom:8px;
+}
+.radii .v {
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+  color:var(--c700);
+}
+.radii .n { font-size:10px; color:var(--c500); margin-top:2px; }
+
+/* ─── SHADOW ─── */
+.shadows { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
+.shadows .item {
+  background:var(--c50); padding:24px 20px; border-radius:14px;
+}
+.shadows .box {
+  height:70px; background:var(--c0);
+  border-radius:12px;
+}
+.shadows .v {
+  font-family:'JetBrains Mono', monospace; font-size:10px;
+  color:var(--c500); margin-top:12px; line-height:1.5;
+}
+.shadows .v b { color:var(--c900); font-weight:600; display:block; font-size:11px; margin-bottom:2px; }
+
+/* ─── component anatomy frame ─── */
+.spec-frame {
+  background:var(--c50); border-radius:14px; padding:32px 28px;
+  display:grid; grid-template-columns: auto 1fr;
+  gap:36px; align-items:center;
+}
+.spec-frame.col2 { grid-template-columns: 1fr 1fr; }
+.spec-frame .render {
+  display:flex; align-items:center; justify-content:center;
+  min-height:80px;
+}
+.spec-table {
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  display:grid; grid-template-columns: 84px 1fr;
+  gap:6px 14px;
+  color:var(--c700);
+}
+.spec-table dt { color:var(--c500); }
+.spec-table dd b { color:var(--c900); font-weight:600; }
+.spec-table dd .swatch-i {
+  display:inline-block; width:9px; height:9px;
+  border-radius:2px; margin-right:5px; vertical-align:-1px;
+  border:1px solid rgba(31,30,27,0.10);
+}
+
+/* component renderings */
+.btn-primary {
+  background:#2D8A4E; color:#fff;
+  font-weight:600; font-size:15px;
+  padding:12px 24px; border-radius:10px;
+  border:none; cursor:default;
+  font-family:'Pretendard',sans-serif;
+}
+.btn-secondary {
+  background:#fff; color:#2D8A4E;
+  font-weight:600; font-size:15px;
+  padding:12px 24px; border-radius:10px;
+  border:1.5px solid #2D8A4E;
+  font-family:'Pretendard',sans-serif;
+}
+.btn-ghost {
+  background:none; color:#2D8A4E;
+  font-weight:500; font-size:14px;
+  padding:8px 12px; border:none;
+  font-family:'Pretendard',sans-serif;
+}
+.btn-destructive {
+  background:#DC2626; color:#fff;
+  font-weight:600; font-size:15px;
+  padding:12px 24px; border-radius:10px;
+  border:none;
+  font-family:'Pretendard',sans-serif;
+}
+
+.badge {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 9px; border-radius:9999px;
+  font-size:11px; font-weight:600;
+  font-family:'Pretendard',sans-serif;
+}
+
+.card-demo {
+  background:#fff; border-radius:14px; padding:14px;
+  box-shadow:0 1px 2px rgba(31,30,27,0.04);
+  width:280px;
+  font-family:'Pretendard',sans-serif;
+}
+
+/* ─── DEVICE — scaled phone with annotation overlays ─── */
+.phone {
+  width:320px; height:692px;
+  background:#1F1E1B; padding:8px;
+  border-radius:36px;
+  position:relative;
+  flex-shrink:0;
+  box-shadow:0 8px 24px rgba(31,30,27,0.10);
+}
+.phone-inner {
+  width:100%; height:100%;
+  background:#FAF7F4; border-radius:30px;
+  overflow:hidden; position:relative;
+  display:flex; flex-direction:column;
+  font-family:'Pretendard',sans-serif;
+}
+.statusbar {
+  height:36px; padding:0 22px;
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:13px; font-weight:600; color:#1F1E1B; flex-shrink:0;
+}
+.tabbar {
+  height:64px; padding-bottom:14px;
+  background:rgba(255,255,255,0.92);
+  border-top:1px solid #E0DAD0;
+  display:grid; grid-template-columns:repeat(5,1fr);
+  flex-shrink:0;
+}
+.tabbar .item {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-size:10px; color:#9A9389; gap:2px;
+}
+.tabbar .item.active { color:#2D8A4E; }
+.tabbar .item .ic { font-size:18px; line-height:1; }
+
+/* annotation lane around phone */
+.lab-row {
+  display:grid; grid-template-columns: 1fr 320px 1fr;
+  gap:20px; align-items:start;
+  background:var(--c50); border-radius:14px; padding:24px;
+}
+.lab-row.no-right { grid-template-columns: 1fr 320px; }
+.lab-row.center-only { grid-template-columns: 320px; justify-content:center; }
+.lab-col {
+  display:flex; flex-direction:column; gap:14px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+}
+.lab-col.right { align-items:flex-start; }
+.lab {
+  padding:10px 12px; background:var(--c0); border-radius:8px;
+  border:1px solid var(--c200);
+  position:relative;
+  box-shadow:0 1px 2px rgba(31,30,27,0.04);
+  max-width:240px;
+}
+.lab .ttl {
+  font-size:10px; color:var(--c500); font-weight:600;
+  text-transform:uppercase; letter-spacing:1px;
+}
+.lab .det {
+  margin-top:4px; color:var(--c900); font-size:11px;
+  line-height:1.5;
+}
+.lab .det b { color:var(--p700); }
+.lab.danger .ttl { color:var(--redline); }
+
+/* small spec annotation pin */
+.pin {
+  display:inline-block; width:18px; height:18px;
+  border-radius:9px; background:var(--redline); color:#fff;
+  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700;
+  text-align:center; line-height:18px;
+  margin-right:8px;
+  vertical-align:1px;
+}
+.pin.blue { background:var(--bluedot); }
+
+/* divider */
+.div { height:1px; background:var(--c200); margin:40px 0 32px; }
+
+/* layout grid demo */
+.lg {
+  display:grid; grid-template-columns: 1fr 320px;
+  gap:32px; align-items:center;
+  background:var(--c50); border-radius:14px; padding:28px;
+}
+.lg .grid-phone {
+  width:320px; height:480px;
+  background:#1F1E1B; padding:8px;
+  border-radius:36px;
+  position:relative;
+}
+.lg .grid-phone-inner {
+  width:100%; height:100%;
+  background:#FAF7F4; border-radius:30px;
+  position:relative; overflow:hidden;
+}
+.lg .grid-overlay {
+  position:absolute; inset:0;
+  background:
+    linear-gradient(to right, transparent 20px, rgba(220,38,38,0.07) 20px, rgba(220,38,38,0.07) calc(100% - 20px), transparent calc(100% - 20px));
+}
+.lg .grid-overlay::before {
+  content:''; position:absolute; left:20px; right:20px; top:0; bottom:0;
+  background:rgba(45,138,78,0.06);
+  border-left:1px dashed rgba(220,38,38,0.3);
+  border-right:1px dashed rgba(220,38,38,0.3);
+}
+.lg .gl {
+  position:absolute;
+  font-family:'JetBrains Mono', monospace; font-size:10px;
+  color:var(--redline); font-weight:600;
+}
+.lg .lab-list {
+  display:flex; flex-direction:column; gap:14px;
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+}
+.lg .lab-list .it { display:flex; gap:10px; align-items:flex-start; }
+
+/* responsive */
+@media (max-width:980px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { display:none; }
+  .swatches { grid-template-columns: repeat(2, 1fr); }
+  .shadows { grid-template-columns: 1fr; }
+  .type-row { grid-template-columns: 1fr; }
+  .lab-row { grid-template-columns: 1fr; }
+  .lab-row.no-right { grid-template-columns: 1fr; }
+  .lab-row.center-only { grid-template-columns: 1fr; }
+  .spec-frame { grid-template-columns: 1fr; }
+  .lg { grid-template-columns: 1fr; }
+  .hero { padding:40px 24px 24px; }
+  .hero h1 { font-size:30px; }
+  .page { padding:24px 20px; }
+  .frame { padding:24px 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span>Dugout Spec</div>
+    <div class="v">v0.1 Alpha · Figma-ready</div>
+    <nav>
+      <div class="group">Foundation</div>
+      <a href="#grid"><span class="n">01</span>레이아웃 그리드</a>
+      <a href="#color"><span class="n">02</span>컬러 시스템</a>
+      <a href="#type"><span class="n">03</span>타이포그래피</a>
+      <a href="#space"><span class="n">04</span>스페이싱</a>
+      <a href="#radius"><span class="n">05</span>모서리 · 그림자</a>
+      <a href="#icon"><span class="n">06</span>아이코노그래피</a>
+
+      <div class="group">Components</div>
+      <a href="#btn"><span class="n">07</span>버튼</a>
+      <a href="#badge"><span class="n">08</span>뱃지</a>
+      <a href="#input"><span class="n">09</span>입력</a>
+      <a href="#card"><span class="n">10</span>카드</a>
+      <a href="#nav"><span class="n">11</span>NavBar</a>
+      <a href="#tab"><span class="n">12</span>TabBar</a>
+      <a href="#list"><span class="n">13</span>리스트 아이템</a>
+
+      <div class="group">Screen Redlines</div>
+      <a href="#scr-splash"><span class="n">14</span>스플래시</a>
+      <a href="#scr-onboard"><span class="n">15</span>온보딩</a>
+      <a href="#scr-home"><span class="n">16</span>홈 대시보드</a>
+      <a href="#scr-team-detail"><span class="n">17</span>팀 상세</a>
+      <a href="#scr-match-detail"><span class="n">18</span>경기 상세</a>
+      <a href="#scr-att-vote"><span class="n">19</span>출석 응답</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <header class="hero">
+      <div class="eyebrow">Design Spec · Figma-ready</div>
+      <h1>Dugout 디자인 스펙</h1>
+      <p>Figma에 1:1로 옮길 수 있도록 토큰·타이포·컴포넌트·스크린별 redline을 정리한 시각 스펙 문서입니다. 모든 측정값은 iOS Point (= 디자인 픽셀) 단위이며 390×844 기준 프레임입니다.</p>
+      <div class="meta">
+        <span>Frame · <b>390 × 844</b></span>
+        <span>Margin · <b>20 px</b></span>
+        <span>Grid · <b>4 pt</b></span>
+        <span>Font · <b>Pretendard</b></span>
+        <span>Primary · <b>#2D8A4E</b></span>
+      </div>
+    </header>
+
+    <div class="page">
+
+      <!-- ━━━━━━━━━ 01 GRID ━━━━━━━━━ -->
+      <section class="frame" id="grid">
+        <div class="frame-head">
+          <div class="eyebrow">01 · LAYOUT</div>
+          <h2>레이아웃 그리드</h2>
+          <p>iPhone 14 (390 × 844)을 기준 프레임으로 사용합니다. 좌우 20pt safe margin, 카드 간 10pt vertical gap.</p>
+        </div>
+
+        <div class="lg">
+          <div class="lab-list">
+            <div class="it"><span class="pin">A</span><div><b>Frame</b><br/>390 × 844 pt (iPhone 14)</div></div>
+            <div class="it"><span class="pin">B</span><div><b>Status bar</b><br/>height 44 pt · padding 0 22pt</div></div>
+            <div class="it"><span class="pin">C</span><div><b>Safe margin</b><br/>좌우 <code>20 pt</code> · 빨간 점선</div></div>
+            <div class="it"><span class="pin">D</span><div><b>Content gap</b><br/>카드 간 vertical <code>10 pt</code></div></div>
+            <div class="it"><span class="pin">E</span><div><b>Tab bar</b><br/>height 64 pt + bottom safe 14pt</div></div>
+            <div class="it"><span class="pin">F</span><div><b>Base grid</b><br/>4 pt 배수 (4 / 8 / 12 / 16 / 20)</div></div>
+          </div>
+          <div class="grid-phone">
+            <div class="grid-phone-inner">
+              <div class="grid-overlay"></div>
+              <div class="gl" style="top:6px; left:50%; transform:translateX(-50%);">A · 390 × 844</div>
+              <div class="gl" style="top:26px; left:8px;">B · 44</div>
+              <div class="gl" style="top:60px; left:22px;">C · 20</div>
+              <div class="gl" style="top:60px; right:22px;">20</div>
+              <div class="gl" style="bottom:80px; left:50%; transform:translateX(-50%);">E · 64 + 14</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 02 COLOR ━━━━━━━━━ -->
+      <section class="frame" id="color">
+        <div class="frame-head">
+          <div class="eyebrow">02 · COLOR</div>
+          <h2>컬러 시스템</h2>
+          <p>3 ramp + 4 semantic. 각 색상은 50-900 스케일을 가지며 Figma Variable로 그대로 등록할 수 있습니다.</p>
+        </div>
+
+        <div class="section">
+          <h3>Primary / Green</h3>
+          <div class="swatches">
+            <div class="sw"><div class="chip" style="background:#E8F5EE"></div><div class="body"><div class="name">primary-50</div><div class="hex">#E8F5EE</div><div class="use">tinted bg · 알림 카드</div></div></div>
+            <div class="sw"><div class="chip" style="background:#C8E6D2"></div><div class="body"><div class="name">primary-100</div><div class="hex">#C8E6D2</div><div class="use">subtle hover · border</div></div></div>
+            <div class="sw"><div class="chip" style="background:#9FD3B0"></div><div class="body"><div class="name">primary-200</div><div class="hex">#9FD3B0</div><div class="use">스피너 트랙</div></div></div>
+            <div class="sw"><div class="chip" style="background:#2D8A4E"></div><div class="body"><div class="name" style="color:#2D8A4E">primary-500</div><div class="hex">#2D8A4E</div><div class="use"><b>Brand · CTA · accent</b></div></div></div>
+            <div class="sw"><div class="chip" style="background:#236F40"></div><div class="body"><div class="name">primary-600</div><div class="hex">#236F40</div><div class="use">pressed · 강조 텍스트</div></div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Secondary / Warm</h3>
+          <div class="swatches">
+            <div class="sw"><div class="chip" style="background:#FDF1E8"></div><div class="body"><div class="name">secondary-50</div><div class="hex">#FDF1E8</div><div class="use">웜 톤 배경</div></div></div>
+            <div class="sw"><div class="chip" style="background:#FADBC4"></div><div class="body"><div class="name">secondary-100</div><div class="hex">#FADBC4</div><div class="use">D-day badge bg</div></div></div>
+            <div class="sw"><div class="chip" style="background:#F0B083"></div><div class="body"><div class="name">secondary-300</div><div class="hex">#F0B083</div><div class="use">illustration</div></div></div>
+            <div class="sw"><div class="chip" style="background:#D27640"></div><div class="body"><div class="name" style="color:#974D24">secondary-500</div><div class="hex">#D27640</div><div class="use"><b>D-day · 강조 보조</b></div></div></div>
+            <div class="sw"><div class="chip" style="background:#974D24"></div><div class="body"><div class="name">secondary-700</div><div class="hex">#974D24</div><div class="use">badge text</div></div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Cream / Neutral</h3>
+          <div class="swatches">
+            <div class="sw"><div class="chip" style="background:#FFFFFF; border:1px solid var(--c200)"></div><div class="body"><div class="name">cream-0</div><div class="hex">#FFFFFF</div><div class="use">카드 · 입력 bg</div></div></div>
+            <div class="sw"><div class="chip" style="background:#FAF7F4"></div><div class="body"><div class="name">cream-50</div><div class="hex">#FAF7F4</div><div class="use"><b>앱 background</b></div></div></div>
+            <div class="sw"><div class="chip" style="background:#F1ECE5"></div><div class="body"><div class="name">cream-100</div><div class="hex">#F1ECE5</div><div class="use">divider · disabled bg</div></div></div>
+            <div class="sw"><div class="chip" style="background:#E0DAD0"></div><div class="body"><div class="name">cream-200</div><div class="hex">#E0DAD0</div><div class="use">border · placeholder</div></div></div>
+            <div class="sw"><div class="chip" style="background:#C2BBAF"></div><div class="body"><div class="name">cream-300</div><div class="hex">#C2BBAF</div><div class="use">empty state icon</div></div></div>
+            <div class="sw"><div class="chip" style="background:#9A9389"></div><div class="body"><div class="name">cream-400</div><div class="hex">#9A9389</div><div class="use">tab inactive · caption</div></div></div>
+            <div class="sw"><div class="chip" style="background:#73706A"></div><div class="body"><div class="name">cream-500</div><div class="hex">#73706A</div><div class="use">secondary text</div></div></div>
+            <div class="sw"><div class="chip" style="background:#46443F"></div><div class="body"><div class="name">cream-700</div><div class="hex">#46443F</div><div class="use">nav icon</div></div></div>
+            <div class="sw"><div class="chip" style="background:#1F1E1B"></div><div class="body"><div class="name" style="color:#1F1E1B">cream-900</div><div class="hex">#1F1E1B</div><div class="use"><b>Primary text</b></div></div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Semantic</h3>
+          <div class="swatches">
+            <div class="sw"><div class="chip" style="background:#16A34A"></div><div class="body"><div class="name">success</div><div class="hex">#16A34A</div><div class="use">참가 · 완료</div></div></div>
+            <div class="sw"><div class="chip" style="background:#D97706"></div><div class="body"><div class="name">warning</div><div class="hex">#D97706</div><div class="use">늦참 · 주의</div></div></div>
+            <div class="sw"><div class="chip" style="background:#DC2626"></div><div class="body"><div class="name">danger</div><div class="hex">#DC2626</div><div class="use">불참 · 삭제 · 추방</div></div></div>
+            <div class="sw"><div class="chip" style="background:#2563EB"></div><div class="body"><div class="name">info</div><div class="hex">#2563EB</div><div class="use">정보 알림</div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 03 TYPE ━━━━━━━━━ -->
+      <section class="frame" id="type">
+        <div class="frame-head">
+          <div class="eyebrow">03 · TYPOGRAPHY</div>
+          <h2>타이포그래피</h2>
+          <p>Pretendard 단일 패밀리. 모노 폰트는 코드·진행단계에만 사용합니다.</p>
+        </div>
+
+        <div class="type-row">
+          <div class="demo" style="font-size:28px; font-weight:700; letter-spacing:-0.5px;">독수리 야구단</div>
+          <div class="spec">
+            <span class="name">display / large-title</span>
+            <span><b>28 / 700</b> · letter-spacing -0.5</span>
+            <span>line-height 1.1</span>
+            <span>사용: NavBar large title</span>
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="demo" style="font-size:22px; font-weight:700; letter-spacing:-0.3px;">포지션을 알려주세요</div>
+          <div class="spec">
+            <span class="name">title / onboarding</span>
+            <span><b>22 / 700</b> · letter-spacing -0.3</span>
+            <span>사용: 온보딩 헤드라인</span>
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="demo" style="font-size:18px; font-weight:700;">vs 청룡 BC</div>
+          <div class="spec">
+            <span class="name">headline / card-title</span>
+            <span><b>18 / 700</b></span>
+            <span>사용: 경기 카드 메인</span>
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="demo" style="font-size:16px; font-weight:600;">팀 만들기</div>
+          <div class="spec">
+            <span class="name">title-inline</span>
+            <span><b>16 / 600</b></span>
+            <span>사용: NavBar inline title</span>
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="demo" style="font-size:15px; font-weight:600;">CTA 버튼 라벨</div>
+          <div class="spec">
+            <span class="name">button / label</span>
+            <span><b>15 / 600</b></span>
+            <span>사용: Primary · Secondary 버튼</span>
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="demo" style="font-size:14px; font-weight:500;">이번 달 회비 25,000원 입금 부탁드립니다</div>
+          <div class="spec">
+            <span class="name">body</span>
+            <span><b>14 / 500</b></span>
+            <span>사용: 본문 · 리스트 라벨</span>
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="demo" style="font-size:13px; font-weight:400; color:var(--c500);">팀원들에게 보일 이름이에요</div>
+          <div class="spec">
+            <span class="name">caption</span>
+            <span><b>13 / 400</b> · cream-500</span>
+            <span>사용: 설명 텍스트</span>
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="demo" style="font-size:11px; font-weight:600; color:var(--c700);">출석 현황</div>
+          <div class="spec">
+            <span class="name">footnote</span>
+            <span><b>11 / 600</b> · cream-700</span>
+            <span>사용: 카드 헤더 · 라벨</span>
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="demo mono" style="font-size:11px; font-weight:600; color:var(--p700);">SCR-MATCH-DETAIL · 1 / 3</div>
+          <div class="spec">
+            <span class="name">mono</span>
+            <span><b>JetBrains Mono · 11 / 600</b></span>
+            <span>사용: 화면 코드 · 진행 단계</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 04 SPACING ━━━━━━━━━ -->
+      <section class="frame" id="space">
+        <div class="frame-head">
+          <div class="eyebrow">04 · SPACING</div>
+          <h2>스페이싱 스케일</h2>
+          <p>4 pt 베이스 그리드. 화면 padding 20pt, 카드 padding 12~14pt, 카드 간 gap 10pt가 기본.</p>
+        </div>
+        <div class="scale">
+          <div class="scale-item"><div class="bar" style="width:4px; height:24px;"></div><div class="v">4</div><div class="n">space-1</div></div>
+          <div class="scale-item"><div class="bar" style="width:6px; height:36px;"></div><div class="v">6</div><div class="n">space-1.5</div></div>
+          <div class="scale-item"><div class="bar" style="width:8px; height:48px;"></div><div class="v">8</div><div class="n">space-2</div></div>
+          <div class="scale-item"><div class="bar" style="width:10px; height:60px;"></div><div class="v">10</div><div class="n">space-2.5</div></div>
+          <div class="scale-item"><div class="bar" style="width:12px; height:72px;"></div><div class="v">12</div><div class="n">space-3</div></div>
+          <div class="scale-item"><div class="bar" style="width:14px; height:84px;"></div><div class="v">14</div><div class="n">space-3.5</div></div>
+          <div class="scale-item"><div class="bar" style="width:16px; height:96px;"></div><div class="v">16</div><div class="n">space-4</div></div>
+          <div class="scale-item"><div class="bar" style="width:20px; height:120px;"></div><div class="v">20</div><div class="n">space-5</div></div>
+          <div class="scale-item"><div class="bar" style="width:24px; height:144px;"></div><div class="v">24</div><div class="n">space-6</div></div>
+          <div class="scale-item"><div class="bar" style="width:32px; height:192px;"></div><div class="v">32</div><div class="n">space-8</div></div>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 05 RADIUS / SHADOW ━━━━━━━━━ -->
+      <section class="frame" id="radius">
+        <div class="frame-head">
+          <div class="eyebrow">05 · SHAPE</div>
+          <h2>모서리 · 그림자</h2>
+          <p>radius는 6단계. 그림자는 1단계만 사용 (Material-style elevation 미사용).</p>
+        </div>
+
+        <div class="section">
+          <h3>Radius</h3>
+          <div class="radii">
+            <div class="item"><div class="box" style="border-radius:6px;"></div><div class="v">6</div><div class="n">tag · pill</div></div>
+            <div class="item"><div class="box" style="border-radius:8px;"></div><div class="v">8</div><div class="n">small button · chip</div></div>
+            <div class="item"><div class="box" style="border-radius:10px;"></div><div class="v">10</div><div class="n">CTA button · input</div></div>
+            <div class="item"><div class="box" style="border-radius:12px;"></div><div class="v">12</div><div class="n">큰 카드 · 다이얼로그</div></div>
+            <div class="item"><div class="box" style="border-radius:14px;"></div><div class="v">14</div><div class="n">표준 카드</div></div>
+            <div class="item"><div class="box" style="border-radius:24px;"></div><div class="v">24</div><div class="n">FAB · 아바타</div></div>
+            <div class="item"><div class="box" style="border-radius:9999px;"></div><div class="v">∞</div><div class="n">badge · pill</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Shadow</h3>
+          <div class="shadows">
+            <div class="item">
+              <div class="box" style="box-shadow:none; border:1px solid var(--c200);"></div>
+              <div class="v"><b>none / flat</b>0 · 1px solid cream-200<br/>기본 (배경 위 카드)</div>
+            </div>
+            <div class="item">
+              <div class="box" style="box-shadow:0 1px 2px rgba(31,30,27,0.04);"></div>
+              <div class="v"><b>raised</b>0 1px 2px rgba(31,30,27,0.04)<br/>표준 카드 elevation</div>
+            </div>
+            <div class="item">
+              <div class="box" style="box-shadow:0 8px 24px rgba(31,30,27,0.10);"></div>
+              <div class="v"><b>overlay</b>0 8px 24px rgba(31,30,27,0.10)<br/>device frame · FAB · sheet</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 06 ICON ━━━━━━━━━ -->
+      <section class="frame" id="icon">
+        <div class="frame-head">
+          <div class="eyebrow">06 · ICONOGRAPHY</div>
+          <h2>아이코노그래피</h2>
+          <p>v0.1 Alpha는 Emoji + SF Symbols 혼용. Figma에서는 SF Symbols 또는 Lucide(2px stroke) 라이브러리를 연결하세요.</p>
+        </div>
+
+        <div class="section">
+          <h3>탭 아이콘 (24 pt)</h3>
+          <div style="display:flex; gap:32px; flex-wrap:wrap;">
+            <div style="text-align:center;"><div style="font-size:28px;">🏠</div><div class="mono" style="font-size:11px; margin-top:4px; color:var(--c500);">홈</div></div>
+            <div style="text-align:center;"><div style="font-size:28px;">📅</div><div class="mono" style="font-size:11px; margin-top:4px; color:var(--c500);">일정</div></div>
+            <div style="text-align:center;"><div style="font-size:28px;">🤝</div><div class="mono" style="font-size:11px; margin-top:4px; color:var(--c500);">매칭</div></div>
+            <div style="text-align:center;"><div style="font-size:28px;">⚾</div><div class="mono" style="font-size:11px; margin-top:4px; color:var(--c500);">팀</div></div>
+            <div style="text-align:center;"><div style="font-size:28px;">👤</div><div class="mono" style="font-size:11px; margin-top:4px; color:var(--c500);">마이</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>상태 글리프 (16 pt)</h3>
+          <div style="display:flex; gap:32px; flex-wrap:wrap; font-size:14px;">
+            <div><span style="color:#16A34A; font-weight:700">✓</span> 참가</div>
+            <div><span style="color:#DC2626; font-weight:700">✕</span> 불참</div>
+            <div><span style="color:#73706A; font-weight:700">?</span> 미정</div>
+            <div><span>⏰</span> 늦참</div>
+            <div><span>🚪</span> 조퇴</div>
+            <div><span>🤖</span> AI</div>
+            <div><span>📍</span> 장소</div>
+            <div><span>🎫</span> 초대</div>
+            <div><span>🔔</span> 알림</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="div"></div>
+
+      <!-- ━━━━━━━━━ 07 BUTTONS ━━━━━━━━━ -->
+      <section class="frame" id="btn">
+        <div class="frame-head">
+          <div class="eyebrow">07 · COMPONENT</div>
+          <h2>버튼</h2>
+          <p>4가지 위계. Full-width CTA는 width 100% · height 48 fix.</p>
+        </div>
+
+        <div class="spec-frame">
+          <div class="render"><button class="btn-primary" style="width:240px;">팀 만들기</button></div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>Button / Primary</b></dd>
+            <dt>fill</dt><dd><span class="swatch-i" style="background:#2D8A4E"></span>primary-500</dd>
+            <dt>text</dt><dd><span class="swatch-i" style="background:#fff"></span>#FFFFFF · 15 / 600</dd>
+            <dt>padding</dt><dd>12 v · 16 h (full-width 시)</dd>
+            <dt>radius</dt><dd>10</dd>
+            <dt>height</dt><dd>48 (full-width)</dd>
+            <dt>pressed</dt><dd>fill → primary-600</dd>
+          </dl>
+        </div>
+
+        <div class="spec-frame" style="margin-top:14px;">
+          <div class="render"><button class="btn-secondary" style="width:240px;">초대 코드로 참여</button></div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>Button / Secondary</b></dd>
+            <dt>fill</dt><dd><span class="swatch-i" style="background:#fff"></span>cream-0</dd>
+            <dt>stroke</dt><dd>1.5 · <span class="swatch-i" style="background:#2D8A4E"></span>primary-500</dd>
+            <dt>text</dt><dd><span class="swatch-i" style="background:#2D8A4E"></span>primary-500 · 15 / 600</dd>
+            <dt>radius</dt><dd>10</dd>
+          </dl>
+        </div>
+
+        <div class="spec-frame" style="margin-top:14px;">
+          <div class="render"><button class="btn-ghost">로그인 없이 둘러보기</button></div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>Button / Ghost</b></dd>
+            <dt>fill</dt><dd>transparent</dt>
+            <dt>text</dt><dd><span class="swatch-i" style="background:#2D8A4E"></span>primary-500 · 14 / 500</dd>
+            <dt>padding</dt><dd>8 v · 12 h</dd>
+          </dl>
+        </div>
+
+        <div class="spec-frame" style="margin-top:14px;">
+          <div class="render"><button class="btn-destructive" style="width:240px;">팀에서 추방</button></div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>Button / Destructive</b></dd>
+            <dt>fill</dt><dd><span class="swatch-i" style="background:#DC2626"></span>danger</dd>
+            <dt>text</dt><dd>#FFFFFF · 15 / 600</dd>
+            <dt>또는</dt><dd>tinted: bg <code>danger@8%</code> · text danger</dd>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 08 BADGE ━━━━━━━━━ -->
+      <section class="frame" id="badge">
+        <div class="frame-head">
+          <div class="eyebrow">08 · COMPONENT</div>
+          <h2>뱃지</h2>
+          <p>응답 상태 5종 + 역할 3종 + D-day. 항상 아이콘 + 텍스트 (색 only X).</p>
+        </div>
+
+        <div class="spec-frame col2">
+          <div class="render" style="display:flex; flex-direction:column; gap:8px; align-items:flex-start; min-height:auto;">
+            <span class="badge" style="background:rgba(22,163,74,0.12); color:#16A34A">✓ 참가</span>
+            <span class="badge" style="background:rgba(220,38,38,0.10); color:#DC2626">✕ 불참</span>
+            <span class="badge" style="background:#F1ECE5; color:#46443F">? 미응답</span>
+            <span class="badge" style="background:rgba(217,119,6,0.14); color:#D97706">⏰ 늦참</span>
+            <span class="badge" style="background:#FADBC4; color:#974D24">🚪 조퇴</span>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>Badge / Status (5)</b></dd>
+            <dt>padding</dt><dd>3 v · 9 h</dd>
+            <dt>radius</dt><dd>9999 (pill)</dd>
+            <dt>text</dt><dd>11 / 600</dd>
+            <dt>bg opacity</dt><dd>10~14% of text color</dd>
+            <dt>icon gap</dt><dd>4</dd>
+          </dl>
+        </div>
+
+        <div class="spec-frame col2" style="margin-top:14px">
+          <div class="render" style="display:flex; flex-direction:column; gap:8px; align-items:flex-start; min-height:auto;">
+            <span class="badge" style="background:#FADBC4; color:#974D24">주장</span>
+            <span class="badge" style="background:#E8F5EE; color:#236F40">매니저</span>
+            <span class="badge" style="background:#F1ECE5; color:#46443F">일반</span>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>Badge / Role (3)</b></dd>
+            <dt>captain</dt><dd>bg secondary-100 · text secondary-700</dd>
+            <dt>manager</dt><dd>bg primary-50 · text primary-600</dd>
+            <dt>player</dt><dd>bg cream-100 · text cream-700</dd>
+          </dl>
+        </div>
+
+        <div class="spec-frame col2" style="margin-top:14px">
+          <div class="render" style="display:flex; gap:8px; align-items:center; min-height:auto;">
+            <span class="badge" style="background:#FADBC4; color:#974D24">D-3</span>
+            <span class="badge" style="background:#D27640; color:#fff">D-3 · 토 14:00</span>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>Badge / D-day (2)</b></dd>
+            <dt>regular</dt><dd>bg secondary-100 · text secondary-700</dd>
+            <dt>emphasized</dt><dd>bg secondary-500 · text #FFF (경기 상세 헤더)</dd>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 09 INPUT ━━━━━━━━━ -->
+      <section class="frame" id="input">
+        <div class="frame-head">
+          <div class="eyebrow">09 · COMPONENT</div>
+          <h2>입력 필드</h2>
+          <p>label은 항상 위에. 활성 시 stroke를 1 → 1.5px primary-500으로 변경.</p>
+        </div>
+
+        <div class="spec-frame">
+          <div class="render" style="flex-direction:column; align-items:flex-start; gap:6px; width:280px;">
+            <label style="font-size:11px; font-weight:600; color:#46443F;">닉네임</label>
+            <input value="김주장" style="width:100%; padding:12px 14px; border-radius:10px; background:#FAF7F4; border:1.5px solid #2D8A4E; font-size:15px; outline:none; font-family:'Pretendard';">
+            <div style="font-size:11px; color:#2D8A4E;">✓ 사용 가능한 닉네임이에요</div>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>Input / Text</b></dd>
+            <dt>label</dt><dd>11 / 600 · cream-700</dd>
+            <dt>field bg</dt><dd>cream-50</dd>
+            <dt>field stroke</dt><dd>default 1px cream-200 / focus 1.5px primary-500</dd>
+            <dt>padding</dt><dd>12 v · 14 h</dd>
+            <dt>radius</dt><dd>10</dd>
+            <dt>text</dt><dd>15 / 400</dd>
+            <dt>helper</dt><dd>11 / 400 · primary-500 (성공) · danger (오류)</dd>
+            <dt>gap</dt><dd>label→field 6 · field→helper 6</dd>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 10 CARD ━━━━━━━━━ -->
+      <section class="frame" id="card">
+        <div class="frame-head">
+          <div class="eyebrow">10 · COMPONENT</div>
+          <h2>카드</h2>
+          <p>3 variants — Default · Tinted · Hero. 모두 radius 14, shadow raised.</p>
+        </div>
+
+        <div class="spec-frame">
+          <div class="render">
+            <div class="card-demo">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="badge" style="background:#FADBC4; color:#974D24">D-3</span>
+                <span style="font-size:11px; color:#73706A">토 14:00</span>
+              </div>
+              <div style="font-size:18px; font-weight:700; margin-top:8px;">vs 청룡 BC</div>
+              <div style="font-size:11px; color:#73706A; margin-top:2px;">📍 잠실 한강 야구장</div>
+              <div style="margin-top:12px; padding-top:10px; border-top:1px solid #F1ECE5; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11px; color:#73706A;">내 응답</span>
+                <span class="badge" style="background:rgba(22,163,74,0.12); color:#16A34A">✓ 참가</span>
+              </div>
+            </div>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>Card / Default</b></dd>
+            <dt>fill</dt><dd>cream-0 (#FFFFFF)</dd>
+            <dt>padding</dt><dd>14 (또는 12 dense)</dd>
+            <dt>radius</dt><dd>14</dd>
+            <dt>shadow</dt><dd>0 1px 2px rgba(31,30,27,0.04)</dd>
+            <dt>divider</dt><dd>1px cream-100 · gap top 12 · bottom 10</dd>
+          </dl>
+        </div>
+
+        <div class="spec-frame" style="margin-top:14px">
+          <div class="render">
+            <div class="card-demo" style="background:#E8F5EE; border:1px solid #C8E6D2;">
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="font-size:18px;">🤖</span>
+                <div>
+                  <div style="font-size:11px; font-weight:700; color:#236F40;">AI 출석 예측</div>
+                  <div style="font-size:14px; font-weight:700; margin-top:2px;">예상 14~16명 참가</div>
+                  <div style="font-size:11px; color:#73706A; margin-top:3px;">미응답 3명 중 2명은 참가 가능성 ↑</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>Card / Tinted (AI)</b></dd>
+            <dt>fill</dt><dd>primary-50</dd>
+            <dt>stroke</dt><dd>1px primary-100</dd>
+            <dt>icon size</dt><dd>18 (emoji) · gap 10</dd>
+            <dt>title color</dt><dd>primary-600 · 11 / 700</dd>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 11 NAVBAR ━━━━━━━━━ -->
+      <section class="frame" id="nav">
+        <div class="frame-head">
+          <div class="eyebrow">11 · COMPONENT</div>
+          <h2>NavBar</h2>
+          <p>3 variants — Large (탭 진입) · Inline (detail) · Modal (form).</p>
+        </div>
+
+        <div class="spec-frame">
+          <div class="render" style="width:280px; flex-direction:column; align-items:stretch;">
+            <div style="background:#fff; padding:8px 16px 12px;">
+              <div style="display:flex; justify-content:flex-end;"><span style="font-size:18px; color:#46443F;">🔔</span></div>
+              <div style="font-size:28px; font-weight:700; letter-spacing:-0.5px; margin-top:4px;">독수리 야구단</div>
+            </div>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>NavBar / Large</b></dd>
+            <dt>height</dt><dd>약 96 (title 28 + padding)</dd>
+            <dt>padding</dt><dd>8 t · 16 h · 12 b</dd>
+            <dt>title</dt><dd>28 / 700 · cream-900</dd>
+            <dt>right action</dt><dd>icon 32×32 tap area</dd>
+            <dt>사용</dt><dd>탭 첫 진입 화면 (홈·일정·팀·마이)</dd>
+          </dl>
+        </div>
+
+        <div class="spec-frame" style="margin-top:14px">
+          <div class="render" style="width:280px; flex-direction:column; align-items:stretch;">
+            <div style="background:#fff; padding:8px 16px; display:flex; align-items:center; justify-content:space-between; min-height:44px; border-bottom:1px solid #F1ECE5;">
+              <span style="font-size:22px; color:#46443F;">‹</span>
+              <span style="font-size:16px; font-weight:600;">수원 라이거스</span>
+              <span style="font-size:18px; color:#46443F;">⋯</span>
+            </div>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>NavBar / Inline</b></dd>
+            <dt>height</dt><dd>44</dd>
+            <dt>title</dt><dd>16 / 600</dd>
+            <dt>back</dt><dd>‹ chevron · 22pt · primary 색상 X (neutral 그대로)</dd>
+            <dt>border</dt><dd>1px cream-100 bottom</dd>
+          </dl>
+        </div>
+
+        <div class="spec-frame" style="margin-top:14px">
+          <div class="render" style="width:280px; flex-direction:column; align-items:stretch;">
+            <div style="background:#fff; padding:8px 16px; display:flex; align-items:center; justify-content:space-between; min-height:44px; border-bottom:1px solid #F1ECE5;">
+              <span style="font-size:14px; color:#73706A;">취소</span>
+              <span style="font-size:16px; font-weight:600;">팀 만들기</span>
+              <span style="font-size:14px; font-weight:600; color:#2D8A4E;">저장</span>
+            </div>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>NavBar / Modal</b></dd>
+            <dt>좌측</dt><dd>"취소" · 14 / 400 · cream-500</dd>
+            <dt>우측</dt><dd>"저장" · 14 / 600 · primary-500 (disabled 시 cream-400)</dd>
+            <dt>사용</dt><dd>풀스크린 폼 (생성·등록·응답)</dd>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 12 TABBAR ━━━━━━━━━ -->
+      <section class="frame" id="tab">
+        <div class="frame-head">
+          <div class="eyebrow">12 · COMPONENT</div>
+          <h2>TabBar</h2>
+          <p>고정 5탭. 활성 아이콘 색 변경 + label 700.</p>
+        </div>
+
+        <div class="spec-frame">
+          <div class="render" style="width:320px;">
+            <div class="tabbar" style="width:100%; border-radius:14px; border:1px solid #E0DAD0;">
+              <div class="item active"><div class="ic">🏠</div>홈</div>
+              <div class="item"><div class="ic" style="filter:grayscale(1) opacity(0.55)">📅</div>일정</div>
+              <div class="item"><div class="ic" style="filter:grayscale(1) opacity(0.55)">🤝</div>매칭</div>
+              <div class="item"><div class="ic" style="filter:grayscale(1) opacity(0.55)">⚾</div>팀</div>
+              <div class="item"><div class="ic" style="filter:grayscale(1) opacity(0.55)">👤</div>마이</div>
+            </div>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>TabBar</b></dd>
+            <dt>height</dt><dd>64 + 14 (bottom safe)</dd>
+            <dt>bg</dt><dd>#FFFFFF @ 92% · backdrop-blur 10</dd>
+            <dt>border</dt><dd>1px cream-200 top</dd>
+            <dt>icon</dt><dd>active: emoji color · inactive: grayscale(1) opacity 0.55</dd>
+            <dt>label</dt><dd>10 / 400 (inactive) · 10 / 600 (active)</dd>
+            <dt>color (active)</dt><dd>primary-500</dd>
+            <dt>color (inactive)</dt><dd>cream-400</dd>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 13 LIST ITEM ━━━━━━━━━ -->
+      <section class="frame" id="list">
+        <div class="frame-head">
+          <div class="eyebrow">13 · COMPONENT</div>
+          <h2>리스트 아이템</h2>
+          <p>마이페이지 · 권한 변경 · 멤버 목록에서 사용. 카드 안에 stack, divider 1px cream-100.</p>
+        </div>
+
+        <div class="spec-frame">
+          <div class="render" style="width:280px;">
+            <div style="background:#fff; border-radius:14px; box-shadow:0 1px 2px rgba(31,30,27,0.04); overflow:hidden;">
+              <div style="padding:13px 14px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px;">소속 팀</span>
+                <span style="font-size:12px; color:#73706A;">2개 ›</span>
+              </div>
+              <div style="height:1px; background:#F1ECE5; margin-left:14px;"></div>
+              <div style="padding:13px 14px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px;">알림 설정</span>
+                <span style="font-size:14px; color:#73706A;">›</span>
+              </div>
+              <div style="height:1px; background:#F1ECE5; margin-left:14px;"></div>
+              <div style="padding:13px 14px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px;">계정 관리</span>
+                <span style="font-size:14px; color:#73706A;">›</span>
+              </div>
+            </div>
+          </div>
+          <dl class="spec-table">
+            <dt>component</dt><dd><b>List Item</b></dd>
+            <dt>height</dt><dd>min 48 (44 tap target + padding)</dd>
+            <dt>padding</dt><dd>13 v · 14 h</dd>
+            <dt>text</dt><dd>14 / 400 · cream-900</dd>
+            <dt>value/chevron</dt><dd>12 / 400 · cream-500</dd>
+            <dt>divider</dt><dd>1px cream-100 · margin-left 14 (텍스트 정렬)</dd>
+          </dl>
+        </div>
+      </section>
+
+      <div class="div"></div>
+
+      <!-- ━━━━━━━━━ 14 SCR-SPLASH ━━━━━━━━━ -->
+      <section class="frame" id="scr-splash">
+        <div class="frame-head">
+          <div class="eyebrow">14 · SCREEN REDLINE · SCR-AUTH-SPLASH</div>
+          <h2>스플래시</h2>
+          <p>Primary-500 풀블리드 + Centered logo. 0.4~2초 노출 후 자동 라우팅.</p>
+        </div>
+        <div class="lab-row">
+          <div class="lab-col right" style="align-items:flex-end;">
+            <div class="lab"><div class="ttl"><span class="pin">1</span>BG</div><div class="det">fill <b>primary-500</b><br/>edge-to-edge (status bar 포함)</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">2</span>Glyph</div><div class="det">⚾ emoji · <b>72pt</b><br/>margin-bottom 14</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">3</span>Wordmark</div><div class="det">"Dugout"<br/><b>30 / 700</b> · #FFFFFF<br/>letter-spacing -0.5</div></div>
+          </div>
+          <div class="phone">
+            <div class="phone-inner">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#2D8A4E;">
+                <div style="font-size:72px; margin-bottom:14px;">⚾</div>
+                <div style="font-size:30px; font-weight:700; color:#fff; letter-spacing:-0.5px;">Dugout</div>
+                <div style="font-size:13px; color:rgba(255,255,255,0.78); margin-top:8px;">야구팀 운영의 모든 것</div>
+              </div>
+            </div>
+          </div>
+          <div class="lab-col">
+            <div class="lab"><div class="ttl"><span class="pin">4</span>Tagline</div><div class="det">"야구팀 운영의 모든 것"<br/><b>13 / 400</b> · #FFFFFF @ 78%<br/>margin-top 8</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">5</span>Status bar</div><div class="det">visible · text color <b>#FFFFFF</b><br/>(light variant)</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 15 SCR-ONBOARD ━━━━━━━━━ -->
+      <section class="frame" id="scr-onboard">
+        <div class="frame-head">
+          <div class="eyebrow">15 · SCREEN REDLINE · SCR-AUTH-ONBOARDING (2/3)</div>
+          <h2>온보딩 — 포지션 선택</h2>
+          <p>3-step 온보딩의 두 번째. mono 폰트로 단계 표기 + 4pt progress bar.</p>
+        </div>
+        <div class="lab-row">
+          <div class="lab-col right" style="align-items:flex-end;">
+            <div class="lab"><div class="ttl"><span class="pin">1</span>Step indicator</div><div class="det"><b>JetBrains Mono · 11 / 400</b><br/>cream-500 · "2 / 3"</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">2</span>Progress bar</div><div class="det">h <b>4</b> · radius 2<br/>track cream-200 · fill primary-500</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">3</span>Headline</div><div class="det"><b>22 / 700</b> · letter-spacing -0.3<br/>margin-top 24 · cream-900</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">4</span>Description</div><div class="det">13 / 400 · cream-500 · margin-top 4</div></div>
+          </div>
+          <div class="phone">
+            <div class="phone-inner">
+              <div class="statusbar"><span>9:41</span><span class="mono" style="letter-spacing:1; opacity:0.55;">·····</span></div>
+              <div style="padding:4px 20px 0;">
+                <div class="mono" style="font-size:11px; color:#73706A;">2 / 3</div>
+                <div style="height:4px; background:#E0DAD0; border-radius:2px; margin-top:8px;"><div style="height:100%; width:66%; background:#2D8A4E; border-radius:2px;"></div></div>
+                <div style="font-size:22px; font-weight:700; margin-top:24px; letter-spacing:-0.3px;">포지션을 알려주세요</div>
+                <div style="font-size:13px; color:#73706A; margin-top:4px;">라인업 추천에 사용돼요</div>
+                <div style="font-size:11px; font-weight:600; color:#46443F; margin-top:20px; margin-bottom:8px;">주 포지션</div>
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+                  <div style="padding:12px 0; border-radius:12px; background:#fff; text-align:center; font-size:14px; font-weight:600; box-shadow:0 1px 2px rgba(31,30,27,0.04);">P</div>
+                  <div style="padding:12px 0; border-radius:12px; background:#fff; text-align:center; font-size:14px; font-weight:600; box-shadow:0 1px 2px rgba(31,30,27,0.04);">C</div>
+                  <div style="padding:12px 0; border-radius:12px; background:#2D8A4E; color:#fff; text-align:center; font-size:14px; font-weight:600;">1B</div>
+                  <div style="padding:12px 0; border-radius:12px; background:#fff; text-align:center; font-size:14px; font-weight:600; box-shadow:0 1px 2px rgba(31,30,27,0.04);">2B</div>
+                  <div style="padding:12px 0; border-radius:12px; background:#fff; text-align:center; font-size:14px; font-weight:600; box-shadow:0 1px 2px rgba(31,30,27,0.04);">3B</div>
+                  <div style="padding:12px 0; border-radius:12px; background:#fff; text-align:center; font-size:14px; font-weight:600; box-shadow:0 1px 2px rgba(31,30,27,0.04);">SS</div>
+                  <div style="padding:12px 0; border-radius:12px; background:#fff; text-align:center; font-size:14px; font-weight:600; box-shadow:0 1px 2px rgba(31,30,27,0.04);">LF</div>
+                  <div style="padding:12px 0; border-radius:12px; background:#fff; text-align:center; font-size:14px; font-weight:600; box-shadow:0 1px 2px rgba(31,30,27,0.04);">CF</div>
+                  <div style="padding:12px 0; border-radius:12px; background:#fff; text-align:center; font-size:14px; font-weight:600; box-shadow:0 1px 2px rgba(31,30,27,0.04);">RF</div>
+                </div>
+                <div style="font-size:11px; font-weight:600; color:#46443F; margin-top:18px; margin-bottom:8px;">서브 포지션 (복수)</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                  <span class="badge" style="background:#E8F5EE; color:#236F40;">✓ 3B</span>
+                  <span class="badge" style="background:#E8F5EE; color:#236F40;">✓ DH</span>
+                  <span class="badge" style="background:#F1ECE5; color:#73706A;">+ SS</span>
+                </div>
+              </div>
+              <div style="flex:1;"></div>
+              <div style="padding:12px 20px 20px;"><button class="btn-primary" style="width:100%;">다음</button></div>
+            </div>
+          </div>
+          <div class="lab-col">
+            <div class="lab"><div class="ttl"><span class="pin">5</span>Position grid</div><div class="det">grid 3×3 · gap <b>8</b><br/>cell padding 12 v · radius 12</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">6</span>Cell — selected</div><div class="det">fill <b>primary-500</b> · text #FFF</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">7</span>Cell — idle</div><div class="det">fill cream-0 · shadow raised</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">8</span>Sub chips</div><div class="det">pill · padding 5/10 · 11 / 600<br/>active: primary-50 / primary-600</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">9</span>CTA</div><div class="det">Primary · full-width<br/>bottom safe inset 20</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 16 SCR-HOME-DASHBOARD ━━━━━━━━━ -->
+      <section class="frame" id="scr-home">
+        <div class="frame-head">
+          <div class="eyebrow">16 · SCREEN REDLINE · SCR-HOME-DASHBOARD</div>
+          <h2>홈 대시보드</h2>
+          <p>탭 첫 화면. Large NavBar + 팀 캐러셀 + 다음 경기 카드 + AI 인사이트 + 팀 공지.</p>
+        </div>
+        <div class="lab-row">
+          <div class="lab-col right" style="align-items:flex-end;">
+            <div class="lab"><div class="ttl"><span class="pin">1</span>Greeting</div><div class="det">12 / 400 · cream-500 · "안녕하세요"</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">2</span>Large title</div><div class="det"><b>28 / 700</b> · letter-spacing -0.5</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">3</span>Bell</div><div class="det">32×32 tap area · 18 emoji<br/>unread dot 8×8 danger · top 4 right 4</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">4</span>Team chips</div><div class="det">horizontal scroll · gap 6<br/>active: primary-500 fill<br/>inactive: cream-0 + cream-200 stroke</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">5</span>Hero card</div><div class="det">Card / Default · padding 14<br/>radius 14</div></div>
+          </div>
+          <div class="phone">
+            <div class="phone-inner">
+              <div class="statusbar"><span>9:41</span><span class="mono" style="letter-spacing:1; opacity:0.55;">·····</span></div>
+              <div style="padding:8px 20px 12px; display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                  <div style="font-size:12px; color:#73706A;">안녕하세요</div>
+                  <div style="font-size:26px; font-weight:700; letter-spacing:-0.5px; margin-top:4px;">김주장 님</div>
+                </div>
+                <div style="position:relative; margin-top:6px;">
+                  <span style="font-size:18px; color:#46443F;">🔔</span>
+                  <span style="position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:#DC2626; border-radius:4px;"></span>
+                </div>
+              </div>
+              <div style="padding:0 20px; flex:1; display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; gap:6px;">
+                  <span class="badge" style="background:#2D8A4E; color:#fff; padding:6px 12px;">⚾ 라이거스</span>
+                  <span class="badge" style="background:#fff; color:#46443F; border:1px solid #E0DAD0; padding:6px 12px;">FC 청춘</span>
+                </div>
+                <div style="background:#fff; border-radius:14px; padding:14px; box-shadow:0 1px 2px rgba(31,30,27,0.04);">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="badge" style="background:#FADBC4; color:#974D24;">D-3</span>
+                    <span style="font-size:11px; color:#73706A;">토 14:00</span>
+                  </div>
+                  <div style="font-size:18px; font-weight:700; margin-top:8px;">vs 청룡 BC</div>
+                  <div style="font-size:11px; color:#73706A; margin-top:2px;">📍 잠실 한강 야구장</div>
+                  <div style="margin-top:12px; padding-top:10px; border-top:1px solid #F1ECE5; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:11px; color:#73706A;">내 응답</span>
+                    <span class="badge" style="background:rgba(22,163,74,0.12); color:#16A34A;">✓ 참가</span>
+                  </div>
+                </div>
+                <div style="background:#E8F5EE; border:1px solid #C8E6D2; border-radius:14px; padding:14px;">
+                  <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <span style="font-size:18px;">🤖</span>
+                    <div>
+                      <div style="font-size:11px; font-weight:700; color:#236F40;">AI 출석 예측</div>
+                      <div style="font-size:14px; font-weight:700; margin-top:2px;">예상 14~16명 참가</div>
+                      <div style="font-size:11px; color:#73706A; margin-top:3px;">미응답 3명 중 2명은 참가 가능성 ↑</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:#fff; border-radius:14px; padding:12px; box-shadow:0 1px 2px rgba(31,30,27,0.04);">
+                  <div style="font-size:11px; font-weight:600; color:#73706A;">팀 공지</div>
+                  <div style="font-size:13px; font-weight:500; margin-top:4px;">이번 달 회비 25,000원 입금 부탁드립니다</div>
+                  <div style="font-size:11px; color:#9A9389; margin-top:3px;">2일 전</div>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="item active"><div class="ic">🏠</div>홈</div>
+                <div class="item"><div class="ic" style="filter:grayscale(1) opacity(0.55)">📅</div>일정</div>
+                <div class="item"><div class="ic" style="filter:grayscale(1) opacity(0.55)">🤝</div>매칭</div>
+                <div class="item"><div class="ic" style="filter:grayscale(1) opacity(0.55)">⚾</div>팀</div>
+                <div class="item"><div class="ic" style="filter:grayscale(1) opacity(0.55)">👤</div>마이</div>
+              </div>
+            </div>
+          </div>
+          <div class="lab-col">
+            <div class="lab"><div class="ttl"><span class="pin">6</span>D-day badge</div><div class="det">badge · secondary-100 / 700</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">7</span>Card title</div><div class="det"><b>18 / 700</b> · margin-top 8</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">8</span>Card divider</div><div class="det">1px cream-100<br/>padding-top 10 · margin-top 12</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">9</span>AI card</div><div class="det">Tinted variant · primary-50<br/>stroke primary-100</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">10</span>TabBar active</div><div class="det">홈 = active · primary-500</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 17 SCR-TEAM-DETAIL ━━━━━━━━━ -->
+      <section class="frame" id="scr-team-detail">
+        <div class="frame-head">
+          <div class="eyebrow">17 · SCREEN REDLINE · SCR-TEAM-DETAIL</div>
+          <h2>팀 상세 (주장 시점)</h2>
+          <p>Inline NavBar · 팀 헤더 카드 · 빠른 액션 2×2 grid · 멤버 리스트 (3개 + 전체 보기).</p>
+        </div>
+        <div class="lab-row">
+          <div class="lab-col right" style="align-items:flex-end;">
+            <div class="lab"><div class="ttl"><span class="pin">1</span>NavBar Inline</div><div class="det">‹ back · "수원 라이거스" 16/600 · ⋯ more</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">2</span>팀 아바타</div><div class="det">54 × 54 · radius 27<br/>fill primary-100 · emoji 22pt</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">3</span>팀명</div><div class="det">15 / 700 · letter-spacing -0.2</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">4</span>메타</div><div class="det">11 / 400 · cream-500 · margin-top 2</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">5</span>Role badge</div><div class="det">"주장" · secondary-100 / 700</div></div>
+          </div>
+          <div class="phone">
+            <div class="phone-inner">
+              <div class="statusbar"><span>9:41</span><span class="mono" style="letter-spacing:1; opacity:0.55;">·····</span></div>
+              <div style="padding:8px 16px; display:flex; align-items:center; justify-content:space-between; min-height:44px;">
+                <span style="font-size:22px; color:#46443F;">‹</span>
+                <span style="font-size:16px; font-weight:600;">수원 라이거스</span>
+                <span style="font-size:18px; color:#46443F;">⋯</span>
+              </div>
+              <div style="padding:0 20px; flex:1; display:flex; flex-direction:column; gap:10px;">
+                <div style="background:#fff; border-radius:14px; padding:12px; box-shadow:0 1px 2px rgba(31,30,27,0.04); display:flex; align-items:center; gap:12px;">
+                  <div style="width:54px; height:54px; border-radius:27px; background:#C8E6D2; display:flex; align-items:center; justify-content:center; font-size:22px;">⚾</div>
+                  <div style="flex:1;">
+                    <div style="font-size:15px; font-weight:700;">수원 라이거스</div>
+                    <div style="font-size:11px; color:#73706A; margin-top:2px;">서울 강남 · 2부 · 매주 토요일</div>
+                  </div>
+                  <span class="badge" style="background:#FADBC4; color:#974D24;">주장</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                  <div style="background:#fff; border-radius:14px; padding:12px; box-shadow:0 1px 2px rgba(31,30,27,0.04); text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:4px;">📅 경기 등록</div>
+                  <div style="background:#fff; border-radius:14px; padding:12px; box-shadow:0 1px 2px rgba(31,30,27,0.04); text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:4px;">🎫 초대 코드</div>
+                  <div style="background:#fff; border-radius:14px; padding:12px; box-shadow:0 1px 2px rgba(31,30,27,0.04); text-align:center; font-size:13px; font-weight:600; color:#9A9389; display:flex; align-items:center; justify-content:center; gap:4px;">⚾ 라인업</div>
+                  <div style="background:#fff; border-radius:14px; padding:12px; box-shadow:0 1px 2px rgba(31,30,27,0.04); text-align:center; font-size:13px; font-weight:600; color:#9A9389; display:flex; align-items:center; justify-content:center; gap:4px;">💰 회비</div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:0 4px; margin-bottom:8px;">
+                    <span style="font-size:11px; font-weight:600; color:#46443F;">멤버 (18)</span>
+                    <span style="font-size:11px; color:#2D8A4E; font-weight:500;">전체 보기</span>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div style="background:#fff; border-radius:14px; padding:10px 12px; box-shadow:0 1px 2px rgba(31,30,27,0.04); display:flex; align-items:center; gap:8px;">
+                      <div style="width:28px; height:28px; border-radius:14px; background:#E0DAD0;"></div>
+                      <span style="font-size:13px; font-weight:500; flex:1;">김주장 #7</span>
+                      <span class="badge" style="background:#FADBC4; color:#974D24;">주장</span>
+                    </div>
+                    <div style="background:#fff; border-radius:14px; padding:10px 12px; box-shadow:0 1px 2px rgba(31,30,27,0.04); display:flex; align-items:center; gap:8px;">
+                      <div style="width:28px; height:28px; border-radius:14px; background:#E0DAD0;"></div>
+                      <span style="font-size:13px; font-weight:500; flex:1;">이매니저 #14</span>
+                      <span class="badge" style="background:#E8F5EE; color:#236F40;">매니저</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="lab-col">
+            <div class="lab"><div class="ttl"><span class="pin">6</span>Quick action grid</div><div class="det">2 × 2 · gap <b>8</b><br/>card padding 12 · radius 14</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">7</span>Disabled action</div><div class="det">text cream-400<br/>(권한 없음 · 시각만 dim)</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">8</span>Section header</div><div class="det">"멤버 (18)" · 11 / 600 · cream-700<br/>"전체 보기" · 11 / 500 · primary-500</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">9</span>Member row</div><div class="det">avatar 28 · radius 14<br/>name 13 / 500 · gap 8</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 18 SCR-MATCH-DETAIL ━━━━━━━━━ -->
+      <section class="frame" id="scr-match-detail">
+        <div class="frame-head">
+          <div class="eyebrow">18 · SCREEN REDLINE · SCR-MATCH-DETAIL</div>
+          <h2>경기 상세</h2>
+          <p>D-day 강조 헤더 + 내 응답 카드 + 출석 카운트 + AI 예측 + 하단 고정 CTA.</p>
+        </div>
+        <div class="lab-row">
+          <div class="lab-col right" style="align-items:flex-end;">
+            <div class="lab"><div class="ttl"><span class="pin">1</span>D-day badge</div><div class="det">emphasized variant<br/>fill <b>secondary-500</b> · text #FFF<br/>"D-3 · 토 14:00"</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">2</span>Match title</div><div class="det"><b>20 / 700</b> · margin-top 8</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">3</span>Meta lines</div><div class="det">11 / 400 · cream-500<br/>📍 위치 · ⏰ 집합시간</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">4</span>내 응답 card</div><div class="det">Tinted · primary-50 background<br/>label 11 / 600 · primary-600</div></div>
+          </div>
+          <div class="phone">
+            <div class="phone-inner">
+              <div class="statusbar"><span>9:41</span><span class="mono" style="letter-spacing:1; opacity:0.55;">·····</span></div>
+              <div style="padding:8px 16px; display:flex; align-items:center; justify-content:space-between; min-height:44px;">
+                <span style="font-size:22px; color:#46443F;">‹</span>
+                <span style="font-size:16px; font-weight:600;">D-3 · 라이거스</span>
+                <span style="font-size:18px; color:#46443F;">⋯</span>
+              </div>
+              <div style="padding:0 20px; flex:1; display:flex; flex-direction:column; gap:10px;">
+                <div style="background:#fff; border-radius:14px; padding:12px; box-shadow:0 1px 2px rgba(31,30,27,0.04);">
+                  <span class="badge" style="background:#D27640; color:#fff;">D-3 · 토 14:00</span>
+                  <div style="font-size:20px; font-weight:700; margin-top:8px;">vs 청룡 BC</div>
+                  <div style="font-size:11px; color:#73706A; margin-top:4px;">📍 잠실 한강 야구장</div>
+                  <div style="font-size:11px; color:#73706A;">⏰ 집합 13:30</div>
+                </div>
+                <div style="background:#E8F5EE; border-radius:14px; padding:12px;">
+                  <div style="font-size:11px; font-weight:600; color:#236F40;">내 응답</div>
+                  <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+                    <span class="badge" style="background:rgba(22,163,74,0.12); color:#16A34A;">✓ 참가</span>
+                    <span style="font-size:11px; color:#1A5532; font-weight:600;">변경</span>
+                  </div>
+                </div>
+                <div style="background:#fff; border-radius:14px; padding:12px; box-shadow:0 1px 2px rgba(31,30,27,0.04);">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:11px; font-weight:600; color:#46443F;">출석 현황</span>
+                    <span style="font-size:11px; color:#2D8A4E; font-weight:500;">전체 보기 ›</span>
+                  </div>
+                  <div style="margin-top:10px; display:grid; grid-template-columns:repeat(3,1fr); gap:6px; text-align:center;">
+                    <div><div style="font-size:20px; font-weight:700; color:#16A34A;">12</div><div style="font-size:11px; color:#73706A;">참가</div></div>
+                    <div><div style="font-size:20px; font-weight:700; color:#DC2626;">2</div><div style="font-size:11px; color:#73706A;">불참</div></div>
+                    <div><div style="font-size:20px; font-weight:700; color:#73706A;">4</div><div style="font-size:11px; color:#73706A;">미응답</div></div>
+                  </div>
+                  <div style="margin-top:10px; display:flex; justify-content:center; gap:14px; font-size:11px; color:#73706A;">
+                    <span>⏰ 늦참 1</span>
+                    <span>🚪 조퇴 1</span>
+                  </div>
+                </div>
+                <div style="background:#E8F5EE; border:1px solid #C8E6D2; border-radius:14px; padding:12px;">
+                  <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <span style="font-size:18px;">🤖</span>
+                    <div>
+                      <div style="font-size:11px; font-weight:700; color:#236F40;">AI 출석 예측 (v0.5+)</div>
+                      <div style="font-size:13px; font-weight:700; margin-top:2px;">예상 14~16명</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="padding:10px 20px 14px;">
+                <button class="btn-primary" style="width:100%;">응답 변경</button>
+              </div>
+            </div>
+          </div>
+          <div class="lab-col">
+            <div class="lab"><div class="ttl"><span class="pin">5</span>현황 grid</div><div class="det">3 columns · text-align center<br/>숫자 <b>20 / 700</b> · 색별 semantic<br/>라벨 11 / 400 · cream-500</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">6</span>부분 참여</div><div class="det">아이콘 + 라벨 + 카운트<br/>11 / 400 · cream-500 · gap 14</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">7</span>AI card</div><div class="det">Tinted variant · primary-50<br/>+ stroke primary-100</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">8</span>Sticky CTA</div><div class="det">bottom fixed · padding 10/20/14<br/>Primary full-width 48 height</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ━━━━━━━━━ 19 SCR-ATT-VOTE ━━━━━━━━━ -->
+      <section class="frame" id="scr-att-vote">
+        <div class="frame-head">
+          <div class="eyebrow">19 · SCREEN REDLINE · SCR-ATT-VOTE</div>
+          <h2>출석 응답 (풀스크린 폼)</h2>
+          <p>v3 변경: 시트 → 풀스크린. 3 메인 옵션 + 2 부분참여 + 사유 + 하단 CTA.</p>
+        </div>
+        <div class="lab-row">
+          <div class="lab-col right" style="align-items:flex-end;">
+            <div class="lab"><div class="ttl"><span class="pin">1</span>NavBar Inline</div><div class="det">‹ back · "출석 응답"<br/>16 / 600</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">2</span>Context card</div><div class="det">Tinted · primary-50<br/>D-day badge emphasized + 정보</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">3</span>Section label</div><div class="det">11 / 600 · cream-700<br/>"응답 선택"</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">4</span>Option card</div><div class="det">padding 14<br/>radius 12<br/>border 1px (idle) / 2px (active)<br/>height ~62 with desc</div></div>
+          </div>
+          <div class="phone">
+            <div class="phone-inner">
+              <div class="statusbar"><span>9:41</span><span class="mono" style="letter-spacing:1; opacity:0.55;">·····</span></div>
+              <div style="padding:8px 16px; display:flex; align-items:center; justify-content:space-between; min-height:44px; border-bottom:1px solid #F1ECE5;">
+                <span style="font-size:22px; color:#46443F;">‹</span>
+                <span style="font-size:16px; font-weight:600;">출석 응답</span>
+                <div style="width:32px;"></div>
+              </div>
+              <div style="padding:16px 20px 0; flex:1; display:flex; flex-direction:column; gap:12px;">
+                <div style="background:#E8F5EE; border-radius:14px; padding:12px;">
+                  <span class="badge" style="background:#D27640; color:#fff;">D-3 · 토 14:00</span>
+                  <div style="font-size:16px; font-weight:700; margin-top:6px;">vs 청룡 BC</div>
+                  <div style="font-size:11px; color:#73706A; margin-top:2px;">📍 잠실 한강 야구장</div>
+                </div>
+                <div style="font-size:11px; font-weight:600; color:#46443F;">응답 선택</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <div style="padding:14px; border-radius:12px; background:rgba(22,163,74,0.10); border:2px solid #16A34A; display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:20px; width:24px; text-align:center; color:#16A34A;">✓</span>
+                    <div style="flex:1;">
+                      <div style="font-size:14px; font-weight:600; color:#16A34A;">참가</div>
+                      <div style="font-size:11px; color:#16A34A; opacity:0.85; margin-top:2px;">경기 시작부터 끝까지 참여</div>
+                    </div>
+                  </div>
+                  <div style="padding:14px; border-radius:12px; background:#fff; border:1px solid #E0DAD0; display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:20px; width:24px; text-align:center;">✕</span>
+                    <div style="flex:1;">
+                      <div style="font-size:14px; font-weight:600;">불참</div>
+                      <div style="font-size:11px; color:#73706A; margin-top:2px;">이번 경기 참여 어려움</div>
+                    </div>
+                  </div>
+                  <div style="padding:14px; border-radius:12px; background:#fff; border:1px solid #E0DAD0; display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:20px; width:24px; text-align:center;">?</span>
+                    <div style="flex:1;">
+                      <div style="font-size:14px; font-weight:600;">미정</div>
+                      <div style="font-size:11px; color:#73706A; margin-top:2px;">아직 확정되지 않음</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="font-size:11px; font-weight:600; color:#46443F; margin-top:6px;">부분 참여 (선택)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                  <div style="padding:12px 0; border-radius:12px; background:#fff; border:1px solid #E0DAD0; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13px;">⏰ 늦참</div>
+                  <div style="padding:12px 0; border-radius:12px; background:#fff; border:1px solid #E0DAD0; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13px;">🚪 조퇴</div>
+                </div>
+              </div>
+              <div style="padding:12px 20px 20px;">
+                <button class="btn-primary" style="width:100%;">응답하기</button>
+              </div>
+            </div>
+          </div>
+          <div class="lab-col">
+            <div class="lab"><div class="ttl"><span class="pin">5</span>Active state</div><div class="det">fill <code>{color}@10%</code><br/>stroke 2px {color}<br/>text {color} 600</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">6</span>Icon column</div><div class="det">width 24 · font 20<br/>고정 polygon (✓ ✕ ?)</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">7</span>부분 참여 grid</div><div class="det">2 columns · gap 8<br/>row-only buttons (no desc)</div></div>
+            <div class="lab"><div class="ttl"><span class="pin">8</span>Sticky CTA</div><div class="det">Primary · disabled까지 height 48 고정</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- closing note -->
+      <div style="text-align:center; color:var(--c500); font-size:12px; padding:24px 0;">
+        <div>본 스펙 문서는 Figma의 Variable / Style / Component / Frame과 1:1 매핑됩니다.</div>
+        <div style="margin-top:6px; font-family:'JetBrains Mono', monospace;">v0.1 Alpha · 2026.05 · primary #2D8A4E · Pretendard 1.3.9</div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

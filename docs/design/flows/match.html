@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dugout — Match Flow Storyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="dugout-screens.jsx"></script>
+<script type="text/babel" src="storyboard-kit.jsx"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',-apple-system,sans-serif; background:#F1ECE5; color:#1F1E1B; -webkit-font-smoothing:antialiased; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+function Cover() {
+  return (
+    <div style={{ width:1480, padding:'48px 56px', display:'flex', flexDirection:'column', gap:28 }}>
+      <CoverHeader
+        flowNo="④"
+        flowName="Match"
+        title={"경기 플로우\n일정 → 등록 → 상세 → 출석 → 요약"}
+        summary="앱의 가장 빈도 높은 사이클. 주장이 등록한 경기에 일반 멤버는 출석 응답을, 주장은 응답 현황을 모니터링합니다. AI 예측은 D-2부터 활성화."
+        stats={[
+          { num:'5', label:'화면' },
+          { num:'3', label:'응답 옵션 (참가/불참/미정)' },
+          { num:'2', label:'부분 참여 (늦참/조퇴)' },
+          { num:'24h', label:'기본 마감' },
+        ]}
+      />
+      <FlowMap
+        title="Flow Map · 경기 사이클"
+        rows={[
+          { nodes:[
+            { id:'MATCH-1', label:'일정 (캘린더)', tone:'brand' },
+          ]},
+          { indent:1, branch:'├─ 주장 ', nodes:[ { id:'MATCH-2', label:'경기 등록', tone:'success', via:'FAB +' }, { id:'MATCH-3', label:'경기 상세', tone:'brand', via:'저장' }, { id:'MATCH-5', label:'출석 요약', tone:'warning', via:'전체 보기' } ]},
+          { indent:1, branch:'└─ 멤버 ', nodes:[ { id:'MATCH-3', label:'경기 상세', tone:'brand', via:'카드 탭' }, { id:'MATCH-4', label:'출석 응답', tone:'success', via:'응답 변경' } ]},
+        ]}
+      />
+      <Legend />
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+        <div style={{ padding:'14px 18px', background:TS.brandSurface, borderRadius:10, border:`1px solid ${C.p200}` }}>
+          <div style={{ fontSize:11, fontWeight:700, color:TS.brand, fontFamily:'JetBrains Mono,monospace', marginBottom:4 }}>알림 트리거</div>
+          <div style={{ fontSize:13, color:TS.text2, lineHeight:1.6 }}>
+            ① 경기 등록 즉시  ② 마감 24h 전 미응답 푸시  ③ 마감 후 주장에게 요약 푸시
+          </div>
+        </div>
+        <div style={{ padding:'14px 18px', background:TS.aiSurface, borderRadius:10, border:`1px solid ${TS.ai}33` }}>
+          <div style={{ fontSize:11, fontWeight:700, color:TS.ai, fontFamily:'JetBrains Mono,monospace', marginBottom:4 }}>AI 예측 (v0.5+)</div>
+          <div style={{ fontSize:13, color:TS.text2, lineHeight:1.6 }}>
+            D-2부터 활성. 과거 출석률 + 요일 + 날씨로 미응답자의 참가 확률 추정. 범위(min~max) 형태로만 표시.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AttVoteStates() {
+  const Btn = ({ pick, current, color, label, desc }) => {
+    const sel = pick===current;
+    return (
+      <button style={{ width:240, padding:'14px', borderRadius:12, textAlign:'left', background: sel ? `${color}1A` : '#fff', border: sel ? `2px solid ${color}` : '1px solid '+C.c200, display:'flex', alignItems:'center', gap:12, color: sel ? color : C.c900, transition:'all 180ms cubic-bezier(0.34,1.56,0.64,1)' }}>
+        <span style={{ fontSize:20, width:24, textAlign:'center' }}>{pick==='참가'?'✓':pick==='불참'?'✕':'?'}</span>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:14, fontWeight:600 }}>{label}</div>
+          <div style={{ fontSize:11, color: sel ? color : C.c500, marginTop:2, opacity: sel ? 0.85 : 1 }}>{desc}</div>
+        </div>
+      </button>
+    );
+  };
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 출석 응답 옵션</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>3가지 응답 + 부분 참여 토글. 선택 시 spring overshoot 180ms.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:24, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="unselected" tone="neutral" note="모든 옵션 default">
+          <Btn pick="참가" current={null} color={C.success} label="참가" desc="경기 시작부터 끝까지 참여" />
+        </StateRow>
+        <StateRow label="selected: 참가" tone="success" note="success ring + bg">
+          <Btn pick="참가" current="참가" color={C.success} label="참가" desc="경기 시작부터 끝까지 참여" />
+        </StateRow>
+        <StateRow label="selected: 불참" tone="danger" note="danger ring + bg">
+          <Btn pick="불참" current="불참" color={C.danger} label="불참" desc="이번 경기 참여 어려움" />
+        </StateRow>
+        <StateRow label="selected: 미정" tone="neutral" note="neutral ring + bg">
+          <Btn pick="미정" current="미정" color={C.c500} label="미정" desc="아직 확정되지 않음" />
+        </StateRow>
+      </div>
+    </div>
+  );
+}
+
+function AttSummaryStates() {
+  const StatCard = ({ label, n, color }) => (
+    <div style={{ width:160, padding:'16px 20px', background:'#fff', borderRadius:12, boxShadow:'0 1px 2px rgba(31,30,27,0.04)', textAlign:'center' }}>
+      <div style={{ fontSize:28, fontWeight:700, color }}>{n}</div>
+      <div style={{ fontSize:11, color:C.c500, marginTop:4 }}>{label}</div>
+    </div>
+  );
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 출석 현황 통계 카드</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>3개 컬럼(참가/불참/미응답) + 보조 행(늦참/조퇴). 카운트가 0이면 dim.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:24, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="참가" tone="success"><StatCard label="참가" n={12} color={C.success} /></StateRow>
+        <StateRow label="불참" tone="danger"><StatCard label="불참" n={2} color={C.danger} /></StateRow>
+        <StateRow label="미응답" tone="neutral"><StatCard label="미응답" n={4} color={C.c500} /></StateRow>
+        <StateRow label="zero (dim)" tone="neutral" note="opacity 0.4"><div style={{ opacity:0.4 }}><StatCard label="불참" n={0} color={C.danger} /></div></StateRow>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas title="Dugout — Match Flow Storyboard" subtitle="④ 경기 · 5 screens · attendance cycle">
+      <FlowNav current="match.html" items={FLOW_NAV} />
+
+      <DCSection id="cover" title="00 · 표지 + 플로우 맵">
+        <DCArtboard id="cover" label="Cover" width={1480} height={920} bg="#fff">
+          <Cover />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="list-create" title="01 · 일정 · 등록 (MATCH-1 ~ MATCH-2)">
+        <DCArtboard id="m1" label="MATCH-1 · 일정" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="MATCH-1" screen="Match List"
+            role="모든 소속 팀의 경기를 캘린더·리스트로 통합 노출"
+            action="① 캘린더/리스트 segment 전환  ② 날짜 셀 탭 → 해당일 경기로 스크롤  ③ 카드 탭 → 상세  ④ FAB(주장) → 등록"
+            transition="segment → 동일 데이터 표현 전환 (fade 180ms). 카드 탭 → MATCH-3"
+            copy="‘전체 팀 ▾’ — 팀 필터 진입점. 단일 팀 사용자는 생략 가능"
+            edge="경기 없음 → 캘린더는 비어있고 하단 ‘예정 경기 없음’ 카드 1개 + 등록 CTA(주장)"
+            api="GET /matches?month=2026-05&teamId=… → [{id, date, time, opp, venue, status}]"
+            components="segment(캘린더/리스트) · calendar-grid · dot-marker · match-card · fab-button · tab-bar(active=1)"
+          >
+            <S_MatchList />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="m2" label="MATCH-2 · 경기 등록" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="MATCH-2" screen="Match Create"
+            role="주장·매니저만 진입. 7개 필드 (날짜·경기시간·집합·상대·구장·마감·메모)"
+            action="필드 입력 → 우상단 ‘저장’ 탭"
+            transition="저장 → 200ms → 토스트 + MATCH-3. 자동으로 팀 멤버에게 푸시 발송"
+            copy="‘집합 시간 (선택)’ — 경기 시간과 분리. ‘메모 (선택)’도 라벨에 명시"
+            edge="과거 날짜 선택 → 인라인 오류 / 같은 시간대 중복 경기 → 경고 alert (등록은 허용)"
+            api="POST /teams/:id/matches {date, kickoff, gather, opp, venue, voteDeadline, memo}"
+            components="nav-modal · date-picker · time-picker · input(text)×2 · select(마감) · textarea"
+          >
+            <S_MatchCreate />
+          </ScreenWithNotes>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="detail-vote" title="02 · 상세 · 응답 (MATCH-3 ~ MATCH-4)">
+        <DCArtboard id="m3" label="MATCH-3 · 경기 상세" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="MATCH-3" screen="Match Detail"
+            role="경기의 모든 정보 + 내 응답 + 출석 현황 + AI 예측"
+            action="① ‘응답 변경’ CTA → MATCH-4  ② ‘전체 보기’ → MATCH-5 (주장만)  ③ ‘⋯’ → 편집·삭제(주장)"
+            transition="응답 변경 → MATCH-4 (slide-up sheet 280ms) / 전체 보기 → MATCH-5"
+            copy="‘내 응답’ 카드는 D-1까지만 변경 가능. 이후 ‘응답 마감됨’ 회색"
+            edge="마감 후 응답 시도 → CTA disabled + 캡션 ‘응답이 마감되었어요’"
+            api="GET /matches/:id → {meta, myResponse, summary, aiPrediction}"
+            components="match-header · my-response-card · summary-card · ai-prediction-card · btn-primary(CTA)"
+          >
+            <S_MatchDetail />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="m4" label="MATCH-4 · 출석 응답" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="MATCH-4" screen="Attendance Vote"
+            role="응답 입력. 3옵션 (참가/불참/미정) + 부분 참여 (늦참/조퇴) + 사유"
+            action="옵션 선택 → 부분참여 (선택) → 사유 입력 (선택) → ‘응답하기’ CTA"
+            transition="옵션 탭 → spring 180ms 오버슛 + ring 활성화. 응답하기 → 200ms → 토스트 + back to MATCH-3"
+            copy="‘응답하기’ — ‘제출’ 대신 행동형. 이전 응답 변경 시도 ‘변경하기’로 자동 치환"
+            edge="이미 응답한 사용자 = 현재 응답 preselect / 늦참+조퇴 동시 선택 가능 (XOR 아님)"
+            api="POST /matches/:id/responses {status, lateMin, leaveEarly, reason}"
+            components="match-mini-card · response-radio(3) · partial-toggle(2) · textarea · btn-primary"
+          >
+            <S_AttVote />
+          </ScreenWithNotes>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="summary" title="03 · 출석 요약 (MATCH-5, 주장)">
+        <DCArtboard id="m5" label="MATCH-5 · 출석 현황" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="MATCH-5" screen="Attendance Summary"
+            role="주장 전용. 응답 통계 + 멤버별 응답 + 미응답자 푸시"
+            action="① 필터 segment(전체/참가/불참/미응답)  ② 미응답자 행의 ‘알림’ 버튼 → 푸시 발송"
+            transition="필터 → 리스트 staggered fade (40ms stagger). 알림 → 200ms → 토스트 ‘알림을 보냈어요’"
+            copy="‘알림’ — ‘push 보내기’ ❌. 짧고 행동형"
+            edge="미응답자 0명 → 필터 ‘미응답’ disabled. 알림 1회 발송 후 24h 쿨다운"
+            api="GET /matches/:id/responses · POST /matches/:id/notify {userIds[]}"
+            components="stat-trio · partial-row(2) · filter-segment(4) · member-row · btn-tiny(알림)"
+          >
+            <S_AttSummary />
+          </ScreenWithNotes>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states-vote" title="04 · 상태 갤러리 · 출석 옵션">
+        <DCArtboard id="sg1" label="Vote States" width={1480} height={360} bg="#fff">
+          <AttVoteStates />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states-summary" title="05 · 상태 갤러리 · 통계 카드">
+        <DCArtboard id="sg2" label="Summary Stat States" width={1480} height={340} bg="#fff">
+          <AttSummaryStates />
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dugout — States Storyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="dugout-screens.jsx"></script>
+<script type="text/babel" src="storyboard-kit.jsx"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',-apple-system,sans-serif; background:#F1ECE5; color:#1F1E1B; -webkit-font-smoothing:antialiased; }
+  @keyframes spin { to { transform: rotate(360deg) } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+function Cover() {
+  return (
+    <div style={{ width:1480, padding:'48px 56px', display:'flex', flexDirection:'column', gap:28 }}>
+      <CoverHeader
+        flowNo="⑥"
+        flowName="States"
+        title={"전역 상태 표준\nEmpty · Loading · Error · Skeleton"}
+        summary="모든 화면에 공통 적용되는 4가지 상태 패턴. ‘데이터 없음/불러오는 중/실패’를 일관된 그래픽·카피·CTA로 처리해 사용자 학습 부담을 최소화합니다."
+        stats={[
+          { num:'4', label:'상태 타입' },
+          { num:'1', label:'복구 CTA (Error)' },
+          { num:'3s', label:'Skeleton → Empty 임계' },
+          { num:'⚠', label:'아이콘 톤 (warning만 컬러)' },
+        ]}
+      />
+      <Legend />
+      <div style={{ padding:'16px 20px', background:TS.brandSurface, borderRadius:10, border:`1px solid ${C.p200}` }}>
+        <div style={{ fontSize:11, fontWeight:700, color:TS.brand, fontFamily:'JetBrains Mono,monospace', marginBottom:6 }}>상태 결정 트리</div>
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap', fontSize:12, color:TS.text2, fontFamily:'JetBrains Mono,monospace' }}>
+          <FlowNode id="REQ" label="API 요청" tone="neutral" size="s" />
+          <FlowArrow />
+          <FlowNode id="0~280ms" label="즉시 응답" tone="success" size="s" />
+          <FlowArrow />
+          <FlowNode id="LOADING" label="loading skeleton" tone="brand" size="s" />
+          <FlowArrow label="3s+" />
+          <FlowNode id="LOADING-EXTENDED" label="Spinner + ‘오래 걸리고 있어요’" tone="warning" size="s" />
+        </div>
+        <div style={{ marginTop:10, display:'flex', gap:6, flexWrap:'wrap', fontSize:12, fontFamily:'JetBrains Mono,monospace' }}>
+          <FlowNode id="RESPONSE" label="응답 처리" tone="neutral" size="s" />
+          <FlowArrow label="data=[]" />
+          <FlowNode id="EMPTY" label="empty state" tone="neutral" size="s" />
+          <FlowArrow label="error" />
+          <FlowNode id="ERROR" label="error + 다시 시도" tone="danger" size="s" />
+          <FlowArrow label="ok" />
+          <FlowNode id="RENDER" label="content" tone="success" size="s" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ButtonAllStates() {
+  const Btn = ({ children, bg=C.p500, color='#fff', border='none', opacity=1, transform='none', shadow='none' }) => (
+    <button style={{ padding:'14px 22px', borderRadius:12, background:bg, color, fontWeight:600, fontSize:15, border, cursor:'pointer', minWidth:200, opacity, transform, boxShadow:shadow, transition:'all 180ms cubic-bezier(0.34,1.56,0.64,1)' }}>{children}</button>
+  );
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:28 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 버튼 (Primary · Secondary · Destructive)</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>3종 버튼의 6가지 상태(default · hover · pressed · disabled · loading · focus-ring).</p>
+      </div>
+
+      <div>
+        <div style={{ fontSize:13, fontWeight:700, color:TS.text3, fontFamily:'JetBrains Mono,monospace', marginBottom:14 }}>PRIMARY · bg=primary-500</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:20, background:TS.paper, padding:'28px 24px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+          <StateRow label="default" tone="neutral"><Btn>다음</Btn></StateRow>
+          <StateRow label="hover" tone="brand"><Btn bg={C.p600}>다음</Btn></StateRow>
+          <StateRow label="pressed" tone="success" note="scale 0.97"><Btn bg={C.p700} transform="scale(0.97)">다음</Btn></StateRow>
+          <StateRow label="focus" tone="brand" note="ring 3px"><Btn shadow={`0 0 0 3px ${C.p200}`}>다음</Btn></StateRow>
+          <StateRow label="loading" tone="warning"><Btn>⟳ 로그인 중…</Btn></StateRow>
+          <StateRow label="disabled" tone="danger" note="opacity 0.4"><Btn opacity={0.4}>다음</Btn></StateRow>
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize:13, fontWeight:700, color:TS.text3, fontFamily:'JetBrains Mono,monospace', marginBottom:14 }}>SECONDARY · outline primary</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:20, background:TS.paper, padding:'28px 24px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+          <StateRow label="default" tone="neutral"><Btn bg="#fff" color={C.p500} border={`1.5px solid ${C.p500}`}>참여</Btn></StateRow>
+          <StateRow label="hover" tone="brand" note="bg p50"><Btn bg={C.p50} color={C.p500} border={`1.5px solid ${C.p500}`}>참여</Btn></StateRow>
+          <StateRow label="pressed" tone="success" note="bg p100"><Btn bg={C.p100} color={C.p500} border={`1.5px solid ${C.p500}`} transform="scale(0.97)">참여</Btn></StateRow>
+          <StateRow label="focus" tone="brand"><Btn bg="#fff" color={C.p500} border={`1.5px solid ${C.p500}`} shadow={`0 0 0 3px ${C.p200}`}>참여</Btn></StateRow>
+          <StateRow label="loading" tone="warning"><Btn bg="#fff" color={C.p500} border={`1.5px solid ${C.p500}`}>⟳ …</Btn></StateRow>
+          <StateRow label="disabled" tone="danger"><Btn bg="#fff" color={C.c400} border={`1.5px solid ${C.c200}`}>참여</Btn></StateRow>
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize:13, fontWeight:700, color:TS.text3, fontFamily:'JetBrains Mono,monospace', marginBottom:14 }}>DESTRUCTIVE · danger</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:20, background:TS.paper, padding:'28px 24px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+          <StateRow label="default" tone="neutral"><Btn bg={C.danger}>팀에서 추방</Btn></StateRow>
+          <StateRow label="hover" tone="brand"><Btn bg="#B91C1C">팀에서 추방</Btn></StateRow>
+          <StateRow label="pressed" tone="success"><Btn bg="#991B1B" transform="scale(0.97)">팀에서 추방</Btn></StateRow>
+          <StateRow label="focus" tone="brand"><Btn bg={C.danger} shadow="0 0 0 3px rgba(220,38,38,0.25)">팀에서 추방</Btn></StateRow>
+          <StateRow label="loading" tone="warning"><Btn bg={C.danger}>⟳ …</Btn></StateRow>
+          <StateRow label="disabled" tone="danger"><Btn bg={C.danger} opacity={0.4}>팀에서 추방</Btn></StateRow>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonScreen() {
+  const Bar = ({ w, h=12, mt=10 }) => <div style={{ width:w, height:h, marginTop:mt, borderRadius:6, background:`linear-gradient(90deg, ${C.c100} 0%, ${C.c200} 50%, ${C.c100} 100%)`, backgroundSize:'200% 100%', animation:'skel 1.4s ease-in-out infinite' }} />;
+  return (
+    <div className="dgs-device"><div className="dgs-screen">
+      <StatusBar />
+      <div style={{ padding:'4px 20px 0' }}>
+        <Bar w={120} h={32} mt={4} />
+        <div style={{ height:4, background:C.c200, borderRadius:2, marginTop:8 }}><div style={{ height:'100%', width:'45%', background:C.p200, borderRadius:2 }} /></div>
+        <Bar w={220} h={24} mt={20} />
+        <Bar w={160} h={12} mt={8} />
+        <div style={{ marginTop:24, background:'#fff', borderRadius:14, padding:14, boxShadow:'0 1px 2px rgba(31,30,27,0.04)' }}>
+          <Bar w={80} h={16} mt={0} />
+          <Bar w="100%" h={18} mt={10} />
+          <Bar w="60%" h={12} mt={8} />
+        </div>
+        <div style={{ marginTop:10, background:'#fff', borderRadius:14, padding:14 }}>
+          <Bar w={80} h={16} mt={0} />
+          <Bar w="100%" h={18} mt={10} />
+          <Bar w="80%" h={12} mt={8} />
+        </div>
+      </div>
+      <style>{`@keyframes skel { 0%, 100% { background-position: 200% 0 } 50% { background-position: -200% 0 } }`}</style>
+    </div></div>
+  );
+}
+
+function ToastSpec() {
+  const T = ({ tone='success', icon='✓', label='저장되었어요' }) => {
+    const map = { success:{bg:C.success,fg:'#fff'}, warning:{bg:C.warning,fg:'#fff'}, danger:{bg:C.danger,fg:'#fff'}, neutral:{bg:C.c900,fg:'#fff'} };
+    const t = map[tone];
+    return <div style={{ padding:'12px 18px', background:t.bg, color:t.fg, borderRadius:9999, fontSize:14, fontWeight:600, display:'inline-flex', alignItems:'center', gap:8, boxShadow:'0 4px 12px rgba(31,30,27,0.15)' }}><span>{icon}</span><span>{label}</span></div>;
+  };
+  return (
+    <div style={{ width:1480, padding:'40px 56px', display:'flex', flexDirection:'column', gap:24 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontWeight:700, letterSpacing:-0.8, marginBottom:6 }}>상태 갤러리 · 토스트</h2>
+        <p style={{ fontSize:13, color:TS.text2 }}>화면 하단(tab-bar 위 24pt)에 1.8s 노출 후 fade-out. 동시 표시 1개만, 새 토스트는 이전 dismiss.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:24, background:TS.paper, padding:'32px 28px', borderRadius:16, border:`1px solid ${TS.borderSubtle}` }}>
+        <StateRow label="success" tone="success"><T tone="success" icon="✓" label="응답이 저장되었어요" /></StateRow>
+        <StateRow label="warning" tone="warning"><T tone="warning" icon="⚠" label="네트워크가 느려요" /></StateRow>
+        <StateRow label="danger" tone="danger"><T tone="danger" icon="✕" label="저장에 실패했어요" /></StateRow>
+        <StateRow label="info" tone="neutral"><T tone="neutral" icon="ℹ" label="알림을 보냈어요" /></StateRow>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas title="Dugout — Global States Storyboard" subtitle="⑥ 상태 표준 · empty · loading · error · skeleton · toast · button states">
+      <FlowNav current="states.html" items={FLOW_NAV} />
+
+      <DCSection id="cover" title="00 · 표지 + 상태 결정 트리">
+        <DCArtboard id="cover" label="Cover" width={1480} height={680} bg="#fff">
+          <Cover />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="states" title="01 · 화면 단위 상태 (Empty · Loading · Error · Skeleton)">
+        <DCArtboard id="se" label="STATE · Empty" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="ST-E" screen="Empty State"
+            role="데이터가 ‘정상적으로 없음’을 알림. 오류가 아님을 명확히."
+            action="회복 CTA (선택사항). 일반 멤버에게는 ‘열람 전용’ 카피만"
+            transition="CTA 탭 → 해당 등록 화면. 데이터 로드 시 fade-in 180ms"
+            copy="‘예정된 경기가 없어요’ — 미래 어조. ‘경기가 없습니다’ ❌"
+            edge="권한 부족으로 비어있는 경우 → 별도 ‘권한 없음’ 카피로 분기"
+            components="empty-illust(cream-300) · headline(15/700) · sub(12/cream-500) · btn-secondary(auto width)"
+          >
+            <S_StateEmpty />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="sl" label="STATE · Loading" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="ST-L" screen="Loading State"
+            role="진행 중임을 알림. 일반적으로 280ms 이하는 비표시 (UI flicker 방지)"
+            action="없음. 사용자는 대기"
+            transition="응답 도착 → fade-out 120ms → 콘텐츠. 3s 초과 시 ‘오래 걸리고 있어요’ 캡션 추가"
+            copy="‘불러오는 중…’ — 말줄임표로 진행 인지. 진행률 % ❌ (정확도 부정확)"
+            edge="10s 초과 → 자동으로 Error State 전환 + ‘다시 시도’"
+            components="spinner(36px, primary-500 on primary-200 track) · caption(12/cream-500)"
+          >
+            <S_StateLoading />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="sr" label="STATE · Error" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="ST-R" screen="Error State"
+            role="실패 복구. 원인 + 행동을 모두 제공"
+            action="‘다시 시도’ tap → 마지막 요청 재실행"
+            transition="다시 시도 → ST-L → 콘텐츠 또는 ST-R 재진입"
+            copy="‘잠시 후 다시 시도해주세요’ — 시스템 탓 ❌. 사용자에게 부드럽게 책임 전가"
+            edge="네트워크 끊김(navigator.onLine=false) → ‘인터넷 연결을 확인해주세요’ 분기 / 3회 연속 실패 → ‘문의하기’ 추가"
+            components="warning-icon(48px, warning color) · headline · sub · btn-secondary(다시 시도)"
+          >
+            <S_StateError />
+          </ScreenWithNotes>
+        </DCArtboard>
+        <DCArtboard id="sk" label="STATE · Skeleton" width={400} height={1020} bg={C.c100}>
+          <ScreenWithNotes
+            id="ST-S" screen="Skeleton (Loading 변형)"
+            role="레이아웃 유지 로딩. 콘텐츠 형태를 미리 보여 ‘체감 속도’ 개선"
+            action="없음"
+            transition="실제 데이터 도착 → cross-fade 280ms (skeleton → content)"
+            copy="없음 (텍스트 없는 상태)"
+            edge="리스트 형태에만 적용. Splash·온보딩 등 정적 화면은 spinner 사용"
+            components="skeleton-bar(cream-100 → cream-200 shimmer 1.4s) · skeleton-card(skeleton-bar 조합)"
+          >
+            <SkeletonScreen />
+          </ScreenWithNotes>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="buttons" title="02 · 상태 갤러리 · 버튼 (모든 변형)">
+        <DCArtboard id="bs" label="Button States" width={1480} height={1100} bg="#fff">
+          <ButtonAllStates />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="toast" title="03 · 상태 갤러리 · 토스트">
+        <DCArtboard id="ts" label="Toast States" width={1480} height={340} bg="#fff">
+          <ToastSpec />
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
