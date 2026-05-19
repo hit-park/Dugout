@@ -38,7 +38,7 @@ struct MainTabView: View {
         case .home:
             HomeView(authViewModel: authViewModel)
         case .schedule:
-            ScheduleTabHost()
+            ScheduleTabHost(authViewModel: authViewModel)
         case .matching:
             placeholder(title: "매칭", message: "팀·용병 매칭 기능을 준비 중이에요")
         case .team:
