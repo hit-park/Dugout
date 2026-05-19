@@ -1,8 +1,3 @@
-//
-//  HomeViewModel.swift
-//  DugoutHomeFeature
-//
-
 import Foundation
 import Observation
 import DugoutCoreNetwork
@@ -10,92 +5,114 @@ import DugoutCoreNetwork
 @MainActor
 @Observable
 public final class HomeViewModel {
-    public enum State: Sendable {
+    public enum TeamsState: Sendable {
         case idle
         case loading
         case loaded([MyTeam])
         case failed(String)
     }
 
-    public enum PendingAction: Sendable {
-        case createTeam
-        case joinTeam
+    public enum DashboardState: Sendable {
+        case idle
+        case loading
+        case loaded(Dashboard)
+        case failed(String)
     }
 
     public enum PresentedSheet: Identifiable, Sendable {
         case createTeam
         case joinTeam
-        case login
 
         public var id: String {
             switch self {
             case .createTeam: "createTeam"
             case .joinTeam: "joinTeam"
-            case .login: "login"
             }
         }
     }
 
-    public private(set) var state: State = .idle
+    public private(set) var teamsState: TeamsState = .idle
+    public private(set) var dashboardState: DashboardState = .idle
+    public var selectedTeamId: Int64? = nil
     public var presentedSheet: PresentedSheet?
-    public var pendingAction: PendingAction?
 
     private let repository: any HomeRepository
+    private var dashboardTask: Task<Void, Never>?
 
     public init(repository: any HomeRepository = HomeRepositoryImpl()) {
         self.repository = repository
     }
 
+    // MARK: - Teams
+
     public func loadTeams() async {
-        state = .loading
+        teamsState = .loading
         do {
             let teams = try await repository.fetchMyTeams()
-            state = .loaded(teams)
+            teamsState = .loaded(teams)
+            if let first = teams.first, selectedTeamId == nil {
+                selectedTeamId = first.teamId
+                await loadDashboard(teamId: first.teamId)
+            }
         } catch let error as APIError {
-            state = .failed(error.userMessage)
+            teamsState = .failed(error.userMessage)
         } catch {
-            state = .failed("팀 목록을 불러오지 못했습니다")
+            teamsState = .failed("팀 목록을 불러오지 못했습니다")
         }
     }
 
-    /// 팀 만들기 액션 트리거. 비로그인이면 LoginSheet 띄우고 pending에 보관.
-    public func tapCreateTeam(isAuthenticated: Bool) {
-        if isAuthenticated {
-            presentedSheet = .createTeam
-        } else {
-            pendingAction = .createTeam
-            presentedSheet = .login
+    // MARK: - Dashboard
+
+    public func selectTeam(_ teamId: Int64) {
+        guard teamId != selectedTeamId else { return }
+        selectedTeamId = teamId
+        dashboardTask?.cancel()
+        dashboardTask = Task {
+            // 280ms skeleton: 너무 빠른 깜빡임 방지
+            dashboardState = .loading
+            try? await Task.sleep(for: .milliseconds(280))
+            guard !Task.isCancelled else { return }
+            await loadDashboard(teamId: teamId)
         }
     }
 
-    /// 팀 가입 액션 트리거. 비로그인이면 LoginSheet 띄우고 pending에 보관.
-    public func tapJoinTeam(isAuthenticated: Bool) {
-        if isAuthenticated {
-            presentedSheet = .joinTeam
-        } else {
-            pendingAction = .joinTeam
-            presentedSheet = .login
+    public func loadDashboard(teamId: Int64) async {
+        dashboardState = .loading
+        do {
+            let dashboard = try await repository.fetchDashboard(teamId: teamId)
+            dashboardState = .loaded(dashboard)
+        } catch let error as APIError {
+            dashboardState = .failed(error.userMessage)
+        } catch {
+            dashboardState = .failed("대시보드를 불러오지 못했습니다")
         }
     }
 
-    /// 시트가 닫힌 직후 호출. 로그인 시트가 인증 성공으로 닫힌 경우
-    /// pending action 시트(.createTeam / .joinTeam)를 이어서 표시한다.
-    /// 같은 transaction에서 sheet binding을 nil → 다른 값으로 swap하면
-    /// SwiftUI가 dismiss로 인식해 무시하므로 onDismiss 콜백을 사용한다.
-    public func onSheetDismissed(isAuthenticated: Bool) {
-        guard let action = pendingAction else { return }
-        pendingAction = nil
-        guard isAuthenticated else { return }
-
-        switch action {
-        case .createTeam: presentedSheet = .createTeam
-        case .joinTeam: presentedSheet = .joinTeam
-        }
+    public func retryDashboard() async {
+        guard let teamId = selectedTeamId else { return }
+        await loadDashboard(teamId: teamId)
     }
 
-    /// 팀 생성/가입 완료 후 호출 — 시트 닫고 목록 새로고침.
+    // MARK: - Team actions
+
+    public func tapCreateTeam() { presentedSheet = .createTeam }
+    public func tapJoinTeam() { presentedSheet = .joinTeam }
+
     public func onTeamMutated() async {
         presentedSheet = nil
+        selectedTeamId = nil
         await loadTeams()
+    }
+
+    // MARK: - Helpers
+
+    public var myTeams: [MyTeam] {
+        if case .loaded(let teams) = teamsState { return teams }
+        return []
+    }
+
+    public var hasNoTeams: Bool {
+        if case .loaded(let teams) = teamsState { return teams.isEmpty }
+        return false
     }
 }
