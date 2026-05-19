@@ -24,16 +24,19 @@ public final class MatchListViewModel {
 
     public let teamId: Int64
     public let isManager: Bool
+    public let currentUserId: Int64
     private let repository: any MatchRepository
     private var loadTask: Task<Void, Never>?
 
     public init(
         teamId: Int64,
         isManager: Bool,
+        currentUserId: Int64,
         repository: any MatchRepository = MatchRepositoryImpl()
     ) {
         self.teamId = teamId
         self.isManager = isManager
+        self.currentUserId = currentUserId
         self.repository = repository
     }
 

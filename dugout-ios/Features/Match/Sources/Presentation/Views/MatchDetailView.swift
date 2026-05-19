@@ -27,8 +27,15 @@ public struct MatchDetailView: View {
             .task { await viewModel.load() }
             .dgToast(item: $viewModel.toast)
             .sheet(isPresented: $viewModel.presentVoteSheet) {
-                // M5 에서 실제 AttendanceVoteSheet 연결. 현 단계는 placeholder.
-                Text("AttendanceVoteSheet (M5에서 연결)")
+                if let detail = viewModel.loadedDetail {
+                    AttendanceVoteSheet(
+                        matchId: detail.match.id,
+                        matchTitle: Self.sheetTitle(for: detail.match),
+                        existingVote: viewModel.myVote
+                    ) { vote in
+                        Task { await viewModel.onVoteCompleted(vote) }
+                    }
+                }
             }
     }
 
@@ -251,6 +258,19 @@ public struct MatchDetailView: View {
         f.dateFormat = "HH:mm"
         return f
     }()
+
+    private static let sheetTitleFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "ko_KR")
+        f.dateFormat = "M월 d일 (E)"
+        return f
+    }()
+
+    private static func sheetTitle(for match: Match) -> String {
+        let datePart = sheetTitleFormatter.string(from: match.matchDate)
+        let opponent = match.opponentName ?? "상대 미정"
+        return "\(datePart) vs \(opponent)"
+    }
 
     private static func matchDateLabel(_ match: Match) -> String {
         var components = Calendar.koreaCalendar.dateComponents(

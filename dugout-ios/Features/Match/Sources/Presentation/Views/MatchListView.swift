@@ -9,8 +9,14 @@ import DugoutDesignSystem
 public struct MatchListView: View {
     @State private var viewModel: MatchListViewModel
 
-    public init(teamId: Int64, isManager: Bool) {
-        _viewModel = State(initialValue: MatchListViewModel(teamId: teamId, isManager: isManager))
+    public init(teamId: Int64, isManager: Bool, currentUserId: Int64) {
+        _viewModel = State(
+            initialValue: MatchListViewModel(
+                teamId: teamId,
+                isManager: isManager,
+                currentUserId: currentUserId
+            )
+        )
     }
 
     public var body: some View {
@@ -39,6 +45,13 @@ public struct MatchListView: View {
             }
         }
         .task { await viewModel.load() }
+        .navigationDestination(for: Int64.self) { matchId in
+            MatchDetailView(
+                matchId: matchId,
+                currentUserId: viewModel.currentUserId,
+                isManager: viewModel.isManager
+            )
+        }
         .fullScreenCover(isPresented: $viewModel.presentCreateSheet) {
             CreateMatchView(teamId: viewModel.teamId) { match in
                 Task { await viewModel.onCreated(match) }
@@ -93,7 +106,10 @@ public struct MatchListView: View {
             } else {
                 VStack(spacing: DGSpacing.md) {
                     ForEach(items) { match in
-                        matchRow(match)
+                        NavigationLink(value: match.id) {
+                            matchRow(match)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }

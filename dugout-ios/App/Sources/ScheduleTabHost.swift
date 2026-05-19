@@ -19,7 +19,8 @@ struct ScheduleTabHost: View {
                 if let firstTeam = teams.first {
                     MatchListView(
                         teamId: firstTeam.teamId,
-                        isManager: firstTeam.role == .captain || firstTeam.role == .manager
+                        isManager: firstTeam.role == .captain || firstTeam.role == .manager,
+                        currentUserId: 0   // FIXME(M6): authViewModel.currentUser?.id 로 교체
                     )
                 } else {
                     DGEmptyState(
