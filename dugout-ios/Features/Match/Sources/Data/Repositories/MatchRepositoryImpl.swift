@@ -52,4 +52,13 @@ public struct MatchRepositoryImpl: MatchRepository {
         }
         return match
     }
+
+    public func fetchDetail(matchId: Int64) async throws -> Match {
+        let endpoint = APIEndpoint(path: "/api/v1/matches/\(matchId)")
+        let dto: MatchDTO = try await client.request(endpoint)
+        guard let match = dto.toDomain() else {
+            throw APIError.decoding("MatchDTO → Match 변환 실패")
+        }
+        return match
+    }
 }
