@@ -173,7 +173,7 @@ public struct MatchDetailView: View {
                         .foregroundStyle(DGColor.c500)
                     VStack(alignment: .leading, spacing: DGSpacing.sm) {
                         ForEach(summary.votes) { vote in
-                            voteRow(vote)
+                            AttendanceVoteRow(vote: vote)
                         }
                     }
                 }
@@ -204,22 +204,6 @@ public struct MatchDetailView: View {
         }
     }
 
-    private func voteRow(_ vote: AttendanceVote) -> some View {
-        HStack(spacing: DGSpacing.sm) {
-            Text(vote.status.emoji)
-            Text(vote.nickname).dgText(.bodyText)
-            if let reason = vote.reason, !reason.isEmpty {
-                Text("· \(reason)")
-                    .dgText(.subText)
-                    .foregroundStyle(DGColor.c500)
-                    .lineLimit(1)
-            }
-            Spacer()
-            Text(Self.shortTime(vote.respondedAt))
-                .dgText(.label)
-                .foregroundStyle(DGColor.c500)
-        }
-    }
 
     // MARK: - 4) 주장 전용 전체 보기 버튼
 
@@ -252,12 +236,6 @@ public struct MatchDetailView: View {
         return f
     }()
 
-    private static let timeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ko_KR")
-        f.dateFormat = "HH:mm"
-        return f
-    }()
 
     private static let sheetTitleFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -290,7 +268,4 @@ public struct MatchDetailView: View {
         respondedAtFormatter.string(from: date)
     }
 
-    private static func shortTime(_ date: Date) -> String {
-        timeFormatter.string(from: date)
-    }
 }
