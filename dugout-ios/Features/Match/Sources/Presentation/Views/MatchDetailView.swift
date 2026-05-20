@@ -5,6 +5,7 @@
 
 import SwiftUI
 import DugoutDesignSystem
+import DugoutLineupFeature
 
 public struct MatchDetailView: View {
     @State private var viewModel: MatchDetailViewModel
@@ -54,6 +55,7 @@ public struct MatchDetailView: View {
                     matchInfoCard(detail.match)
                     myVoteCard(detail.match)
                     attendanceSummaryCard(detail.attendance)
+                    lineupCard(detail.match)
                     if viewModel.isManager {
                         summaryButton
                     }
@@ -204,7 +206,34 @@ public struct MatchDetailView: View {
     }
 
 
-    // MARK: - 4) 주장 전용 전체 보기 버튼
+    // MARK: - 4) 라인업 진입 카드
+
+    private func lineupCard(_ match: Match) -> some View {
+        NavigationLink {
+            LineupView(
+                matchId: match.id,
+                teamId: match.teamId,
+                isManager: viewModel.isManager
+            )
+        } label: {
+            DGCard {
+                HStack {
+                    VStack(alignment: .leading, spacing: DGSpacing.xs) {
+                        Text("라인업").dgText(.cardTitle)
+                        Text("AI 추천으로 자동 배정")
+                            .dgText(.subText)
+                            .foregroundStyle(DGColor.c500)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(DGColor.c500)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - 5) 주장 전용 전체 보기 버튼
 
     @ViewBuilder
     private var summaryButton: some View {
