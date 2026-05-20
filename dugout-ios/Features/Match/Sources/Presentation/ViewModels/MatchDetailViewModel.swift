@@ -6,7 +6,6 @@
 import Foundation
 import Observation
 import DugoutCoreNetwork
-import DugoutDesignSystem
 
 @MainActor
 @Observable
@@ -25,7 +24,6 @@ public final class MatchDetailViewModel {
 
     public private(set) var state: State = .idle
     public var presentVoteSheet: Bool = false
-    public var toast: DGToastItem? = nil
 
     public let matchId: Int64
     public let currentUserId: Int64
@@ -67,12 +65,6 @@ public final class MatchDetailViewModel {
         presentVoteSheet = true
     }
 
-    public func tapSummary() {
-        toast = DGToastItem(
-            message: "출석 요약은 다음 업데이트에 제공돼요",
-            kind: .info
-        )
-    }
 
     public func onVoteCompleted(_ vote: AttendanceVote) async {
         presentVoteSheet = false

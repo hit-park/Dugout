@@ -25,7 +25,6 @@ public struct MatchDetailView: View {
             .navigationTitle("경기 상세")
             .navigationBarTitleDisplayMode(.inline)
             .task { await viewModel.load() }
-            .dgToast(item: $viewModel.toast)
             .sheet(isPresented: $viewModel.presentVoteSheet) {
                 if let detail = viewModel.loadedDetail {
                     AttendanceVoteSheet(
@@ -173,7 +172,7 @@ public struct MatchDetailView: View {
                         .foregroundStyle(DGColor.c500)
                     VStack(alignment: .leading, spacing: DGSpacing.sm) {
                         ForEach(summary.votes) { vote in
-                            voteRow(vote)
+                            AttendanceVoteRow(vote: vote)
                         }
                     }
                 }
@@ -204,28 +203,31 @@ public struct MatchDetailView: View {
         }
     }
 
-    private func voteRow(_ vote: AttendanceVote) -> some View {
-        HStack(spacing: DGSpacing.sm) {
-            Text(vote.status.emoji)
-            Text(vote.nickname).dgText(.bodyText)
-            if let reason = vote.reason, !reason.isEmpty {
-                Text("· \(reason)")
-                    .dgText(.subText)
-                    .foregroundStyle(DGColor.c500)
-                    .lineLimit(1)
-            }
-            Spacer()
-            Text(Self.shortTime(vote.respondedAt))
-                .dgText(.label)
-                .foregroundStyle(DGColor.c500)
-        }
-    }
 
     // MARK: - 4) 주장 전용 전체 보기 버튼
 
+    @ViewBuilder
     private var summaryButton: some View {
-        DGButton("전체 보기", style: .secondary) {
-            viewModel.tapSummary()
+        if let detail = viewModel.loadedDetail {
+            NavigationLink {
+                MatchAttendanceSummaryView(
+                    matchId: viewModel.matchId,
+                    teamId: detail.match.teamId
+                )
+            } label: {
+                Text("전체 보기")
+                    .font(DGFont.pretendard(.semibold, size: 15))
+                    .foregroundStyle(DGColor.p500)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(DGColor.c0)
+                    .clipShape(RoundedRectangle(cornerRadius: DGRadius.button))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DGRadius.button)
+                            .stroke(DGColor.p500, lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -252,12 +254,6 @@ public struct MatchDetailView: View {
         return f
     }()
 
-    private static let timeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ko_KR")
-        f.dateFormat = "HH:mm"
-        return f
-    }()
 
     private static let sheetTitleFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -290,7 +286,4 @@ public struct MatchDetailView: View {
         respondedAtFormatter.string(from: date)
     }
 
-    private static func shortTime(_ date: Date) -> String {
-        timeFormatter.string(from: date)
-    }
 }
