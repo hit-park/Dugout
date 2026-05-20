@@ -24,8 +24,15 @@ public struct LineupView: View {
             .task { await viewModel.load() }
             .dgToast(item: $viewModel.toast)
             .sheet(isPresented: $viewModel.presentEdit) {
-                // M5 에서 실제 LineupEditView 연결. 현 단계는 placeholder.
-                Text("LineupEditView (M5에서 연결)")
+                if let source = viewModel.editSource {
+                    LineupEditView(
+                        matchId: viewModel.matchId,
+                        source: source,
+                        existingLineupExists: viewModel.hasExistingLineup
+                    ) { lineup in
+                        viewModel.onEditCompleted(lineup)
+                    }
+                }
             }
     }
 
