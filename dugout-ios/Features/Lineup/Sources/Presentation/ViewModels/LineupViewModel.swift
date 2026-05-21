@@ -29,6 +29,9 @@ public final class LineupViewModel {
     public var presentEdit: Bool = false
     public var editSource: EditSource? = nil
     public var toast: DGToastItem? = nil
+    public var presentShareSheet: Bool = false
+    public var confirmingInProgress: Bool = false
+    public let shareContext: LineupShareContext?
 
     public let matchId: Int64
     public let teamId: Int64
@@ -40,12 +43,14 @@ public final class LineupViewModel {
         matchId: Int64,
         teamId: Int64,
         isManager: Bool,
+        shareContext: LineupShareContext? = nil,
         lineupRepository: any LineupRepository = LineupRepositoryImpl(),
         attendeeRepository: any AttendeeRepository = AttendeeRepositoryImpl()
     ) {
         self.matchId = matchId
         self.teamId = teamId
         self.isManager = isManager
+        self.shareContext = shareContext
         self.lineupRepository = lineupRepository
         self.attendeeRepository = attendeeRepository
     }
@@ -132,6 +137,29 @@ public final class LineupViewModel {
     public func onEditCancelled() {
         presentEdit = false
         editSource = nil
+    }
+
+    public func tapConfirm() async {
+        guard case .loaded = state else { return }
+        confirmingInProgress = true
+        defer { confirmingInProgress = false }
+        do {
+            let lineup = try await lineupRepository.confirmLineup(matchId: matchId)
+            state = .loaded(lineup)
+            toast = DGToastItem(message: "라인업이 확정됐어요", kind: .success)
+        } catch APIError.server(let response, _) where response.code == "LINEUP_ALREADY_CONFIRMED" {
+            await load()
+            toast = DGToastItem(message: "이미 확정된 라인업이에요", kind: .info)
+        } catch let error as APIError {
+            toast = DGToastItem(message: error.userMessage, kind: .danger)
+        } catch {
+            toast = DGToastItem(message: "확정 중 오류가 발생했어요", kind: .danger)
+        }
+    }
+
+    public func tapShare() {
+        guard case .loaded = state else { return }
+        presentShareSheet = true
     }
 
     public var hasExistingLineup: Bool {
