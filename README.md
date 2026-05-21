@@ -53,7 +53,74 @@ dugout/
 
 ## 개발 환경 설정
 
-> 준비 중
+### 사전 요구사항
+
+- macOS (Apple Silicon 권장 — iOS 빌드 필수)
+- [mise](https://mise.jdx.dev) — Python / Tuist 도구 버전 관리
+- [Docker Desktop](https://docs.docker.com/desktop/install/mac-install/) — postgres + redis
+- Xcode 16+ — iOS 빌드
+- Java 21 (`./gradlew` 가 toolchain 자동 다운로드)
+
+### 첫 셋업 (1회)
+
+```bash
+# 1) 도구 설치 (mise 로 Python 3.12 + tuist 자동 설치)
+mise install
+
+# 2) iOS 의존성
+cd dugout-ios && tuist install && tuist generate && cd ..
+
+# 3) AI 서비스 의존성
+cd dugout-ai && python -m venv .venv && .venv/bin/pip install -r requirements.txt && cd ..
+```
+
+### 일일 워크플로우 (3 터미널)
+
+```bash
+# T1 — 인프라(postgres + redis) + 백엔드
+make stack
+make api
+
+# T2 — AI 서비스 (헝가리안 라인업·매칭 스코어 등)
+make ai
+
+# T3 — iOS Xcode
+make ios
+```
+
+`make help` 로 전체 명령 확인. 자주 쓰는 것:
+
+```bash
+make seed-check     # 4개 서비스 상태 (api/ai/postgres/redis)
+make ios-build      # iOS 빌드 점검 (warnings 0 검증)
+make api-test       # 백엔드 컴파일 점검
+make ai-test        # AI 서비스 pytest
+make clean          # gradle / DerivedData / __pycache__ 일괄 정리
+make down           # postgres + redis 중지
+```
+
+### 검증
+
+```bash
+make seed-check
+# Backend  (8080): HTTP 200
+# AI       (8001): HTTP 200
+# Postgres (5432): UP
+# Redis    (6379): UP
+```
+
+iOS 빌드는 `make ios-build` 가 warnings 0 으로 통과해야 정상.
+
+### 트러블슈팅
+
+| 증상 | 원인 / 해결 |
+|---|---|
+| iOS link 단계 에러 (`_TaskModifier2`, `SwiftUICore.tbd`) | DerivedData stale. `make clean` 후 재빌드 |
+| dugout-ai 가 `pyexpat` import 단계에서 dylib mismatch 로 실패 | Homebrew `python@3.12` 의 expat ABI mismatch. `mise install` 로 cpython 자체 빌드 사용 (`.mise.toml` 가 자동 활성화) |
+| AI 추천 시 백엔드가 `AI_REQUEST_FAILED` 던짐 (422) | `RestClient` 가 글로벌 ObjectMapper 적용 못 받는 회귀. `AiClientConfig` 의 `RestClient.Builder` 빈 의존 확인 |
+| `make ai` 실행 시 `.venv/bin/uvicorn` 없다고 함 | "첫 셋업 (1회)" 의 `.venv` + `pip install` 단계 누락 |
+| 새 iOS 파일이 `.xcodeproj` 에 미등록 | `cd dugout-ios && tuist generate --no-open` |
+| dev DB 가 매번 비어있음 | `application-local.yml` 의 `ddl-auto: create-drop` 의도된 동작. `LocalSeedRunner` 가 부팅 시 시드 INSERT |
 
 ## License
 
