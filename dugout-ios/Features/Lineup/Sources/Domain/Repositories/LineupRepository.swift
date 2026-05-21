@@ -16,6 +16,7 @@ public protocol LineupRepository: Sendable {
 
     func saveLineup(matchId: Int64, request: SaveLineupRequest) async throws -> Lineup
     func updateLineup(matchId: Int64, request: SaveLineupRequest) async throws -> Lineup
+    func confirmLineup(matchId: Int64) async throws -> Lineup
 }
 
 public struct SaveLineupRequest: Sendable, Equatable {
