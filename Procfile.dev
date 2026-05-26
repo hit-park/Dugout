@@ -1,0 +1,2 @@
+api: cd dugout-api && ./gradlew bootRun --args='--spring.profiles.active=local' --console=plain
+ai:  cd dugout-ai && .venv/bin/uvicorn app.main:app --reload --port 8001 --no-use-colors
