@@ -93,6 +93,11 @@ dugout-android/local.properties
 docker-compose.override.yml
 
 # ===========================
+# Overmind (런타임 소켓)
+# ===========================
+.overmind.sock
+
+# ===========================
 # Logs
 # ===========================
 *.log

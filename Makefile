@@ -1,8 +1,10 @@
 .DEFAULT_GOAL := help
-.PHONY: help stack down api ai ios api-test ai-test ios-build seed-check clean
+.PHONY: help dev stack down api ai ios api-test ai-test ios-build seed-check clean
 
 help:
 	@echo "Dugout 개발 명령 — 자세한 워크플로우는 README 참고"
+	@echo ""
+	@echo "  make dev         ★ stack + api + ai 통합 실행 (Procfile.dev / overmind)"
 	@echo ""
 	@echo "  make stack       postgres + redis docker 시작 (백그라운드)"
 	@echo "  make down        postgres + redis 중지"
@@ -17,10 +19,39 @@ help:
 	@echo "  make seed-check  백엔드 + AI 서비스 health check"
 	@echo "  make clean       Gradle / DerivedData / __pycache__ 정리"
 	@echo ""
-	@echo "일일 워크플로우 (3 터미널):"
+	@echo "일일 워크플로우 (권장):"
+	@echo "  T1:  make dev          # api + ai 통합 로그"
+	@echo "  T2:  make ios          # 별도 터미널에서 Xcode"
+	@echo ""
+	@echo "  overmind 보조 명령 (make dev 실행 중인 별도 셸에서):"
+	@echo "    overmind connect api    # api 패널 attach (디버거/입력)"
+	@echo "    overmind restart api    # api만 재시작 (ai는 유지)"
+	@echo "    overmind stop ai        # ai만 정지"
+	@echo ""
+	@echo "수동 분리 워크플로우 (3 터미널):"
 	@echo "  T1:  make stack && make api"
 	@echo "  T2:  make ai"
 	@echo "  T3:  make ios"
+
+dev: stack
+	@command -v overmind >/dev/null 2>&1 || { \
+		echo ""; \
+		echo "✗ overmind 미설치"; \
+		echo "  설치:  brew install overmind tmux"; \
+		echo ""; \
+		exit 1; \
+	}
+	@test -d dugout-ai/.venv || { \
+		echo ""; \
+		echo "✗ dugout-ai/.venv 없음 — Procfile.dev가 .venv/bin/uvicorn을 호출합니다"; \
+		echo "  생성:  cd dugout-ai && python -m venv .venv && .venv/bin/pip install -r requirements.txt"; \
+		echo ""; \
+		exit 1; \
+	}
+	@echo ""
+	@echo "✓ stack ready · starting api + ai via overmind (Ctrl+C로 전체 종료)"
+	@echo ""
+	overmind start
 
 stack:
 	docker compose -f infra/docker-compose.yml up -d
