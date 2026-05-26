@@ -37,9 +37,6 @@ class User(
 
     @Column(name = "fcm_token", length = 500)
     var fcmToken: String? = null,
-
-    @Column(name = "kakao_alimtalk_agreed", nullable = false)
-    var kakaoAlimtalkAgreed: Boolean = false,
 ) : BaseEntity() {
 
     fun updateProfile(nickname: String, profileImgUrl: String?) {
