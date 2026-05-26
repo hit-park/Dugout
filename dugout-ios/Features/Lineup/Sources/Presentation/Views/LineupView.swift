@@ -8,10 +8,18 @@ import DugoutDesignSystem
 public struct LineupView: View {
     @State private var viewModel: LineupViewModel
 
-    public init(matchId: Int64, teamId: Int64, isManager: Bool) {
+    public init(
+        matchId: Int64,
+        teamId: Int64,
+        isManager: Bool,
+        shareContext: LineupShareContext? = nil
+    ) {
         _viewModel = State(
             initialValue: LineupViewModel(
-                matchId: matchId, teamId: teamId, isManager: isManager
+                matchId: matchId,
+                teamId: teamId,
+                isManager: isManager,
+                shareContext: shareContext
             )
         )
     }
@@ -21,6 +29,17 @@ public struct LineupView: View {
             .background(DGColor.c100)
             .navigationTitle("라인업")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if case .loaded = viewModel.state {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            viewModel.tapShare()
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                    }
+                }
+            }
             .task { await viewModel.load() }
             .dgToast(item: $viewModel.toast)
             .sheet(isPresented: $viewModel.presentEdit) {
@@ -32,6 +51,14 @@ public struct LineupView: View {
                     ) { lineup in
                         viewModel.onEditCompleted(lineup)
                     }
+                }
+            }
+            .sheet(isPresented: $viewModel.presentShareSheet) {
+                if case .loaded(let lineup) = viewModel.state {
+                    LineupShareSheet(
+                        lineup: lineup,
+                        shareContext: viewModel.shareContext
+                    )
                 }
             }
     }
@@ -161,10 +188,18 @@ public struct LineupView: View {
 
     private var managerActions: some View {
         VStack(spacing: DGSpacing.md) {
-            DGButton("편집", style: .primary) {
+            DGButton(
+                "확정",
+                style: .primary,
+                isLoading: viewModel.confirmingInProgress,
+                isEnabled: !viewModel.confirmingInProgress
+            ) {
+                Task { await viewModel.tapConfirm() }
+            }
+            DGButton("편집", style: .secondary) {
                 Task { await viewModel.tapEditExisting() }
             }
-            DGButton("AI 다시 추천", style: .secondary) {
+            DGButton("AI 다시 추천", style: .tertiary) {
                 Task { await viewModel.tapRecommend() }
             }
         }

@@ -213,7 +213,14 @@ public struct MatchDetailView: View {
             LineupView(
                 matchId: match.id,
                 teamId: match.teamId,
-                isManager: viewModel.isManager
+                isManager: viewModel.isManager,
+                shareContext: LineupShareContext(
+                    teamName: "",
+                    opponentName: match.opponentName,
+                    matchDate: match.matchDate,
+                    matchTimeText: match.matchTime.displayString,
+                    groundName: match.groundName
+                )
             )
         } label: {
             DGCard {

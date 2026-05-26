@@ -1134,7 +1134,7 @@ DugoutTeamFeature
 
 > Attendance 도메인은 `DugoutMatchFeature` 내부의 `Sources/{Domain,Data,Presentation}/`에 함께 포함되어 있다 (별도 모듈 아님). 출석 응답이 경기 컨텍스트에 종속적이라 모듈 분리보다 폴더 격리가 결합도·오버헤드 측면에서 유리하다고 판단.
 
-`DugoutLineupFeature`는 Phase 4-A 에서 추가된 모듈로, 백엔드 `/api/v1/matches/{matchId}/lineup`(GET/POST/PUT) 과 `/recommend`, 그리고 출석자 조인용으로 `/api/v1/matches/{matchId}/attendance` + `/api/v1/teams/{teamId}/members` 엔드포인트를 사용한다. 주장/매니저는 AI 추천(헝가리안 알고리즘 — dugout-ai)을 받아 편집·저장하고, 일반 멤버는 결과를 readonly 로 조회한다. 라인업 확정(`/confirm`)·카드 이미지 공유(`/card`)는 Phase 4-B 예정이다.
+`DugoutLineupFeature`는 Phase 4-A·B 에서 추가된 모듈로, 백엔드 `/api/v1/matches/{matchId}/lineup`(GET/POST/PUT) + `/recommend` + `/confirm` 엔드포인트를 사용한다. 출석자 조인용으로 `/api/v1/matches/{matchId}/attendance` + `/api/v1/teams/{teamId}/members` 도 호출. 주장/매니저는 AI 추천(헝가리안 알고리즘 — dugout-ai)을 받아 편집·저장·확정하고, 라인업 공유는 iOS 자체 렌더(`ImageRenderer` + `UIActivityViewController`)로 처리한다 (백엔드 `/card` 미사용). 일반 멤버는 결과를 readonly 로 조회. 카카오 알림톡·푸시 알림은 후속 Phase 예정이다.
 
 다음 페이즈에 추가될 모듈(Finance / Matching / Mercenary / Ground / Settings 등)은 같은 Feature 단위 패턴(Domain / Data / Presentation)으로 신설. CoreNetwork + DesignSystem은 모든 Feature가 직접 의존하고, 다른 Feature에 의존할 때만 추가 엣지로 명시.
 

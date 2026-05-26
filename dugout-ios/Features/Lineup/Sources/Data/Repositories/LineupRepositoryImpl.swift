@@ -78,4 +78,16 @@ public struct LineupRepositoryImpl: LineupRepository {
         }
         return lineup
     }
+
+    public func confirmLineup(matchId: Int64) async throws -> Lineup {
+        let endpoint = APIEndpoint(
+            path: "/api/v1/matches/\(matchId)/lineup/confirm",
+            method: .post
+        )
+        let dto: LineupDTO = try await client.request(endpoint)
+        guard let lineup = dto.toDomain() else {
+            throw APIError.decoding("LineupDTO → Lineup 변환 실패")
+        }
+        return lineup
+    }
 }
