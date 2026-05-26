@@ -2,7 +2,7 @@
 //  DGToast.swift
 //  DugoutDesignSystem
 //
-//  4종 토스트. 하단 중앙, 3초 후 fade-out. .dgToast(item:) 모디파이어.
+//  4종 토스트. 하단 중앙, kind 별 차등 dwell 후 fade-out. .dgToast(item:) 모디파이어.
 //
 
 import SwiftUI
@@ -17,6 +17,14 @@ public struct DGToastItem: Identifiable, Equatable, Sendable {
             case .warning: DGColor.warning
             case .danger: DGColor.danger
             case .info: DGColor.info
+            }
+        }
+
+        var dwellSeconds: Double {
+            switch self {
+            case .success, .info: 3.5
+            case .warning: 4.5
+            case .danger: 5.5
             }
         }
     }
@@ -47,7 +55,7 @@ private struct DGToastModifier: ViewModifier {
                     .padding(.bottom, DGSpacing.xxl)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                     .task(id: item.id) {
-                        try? await Task.sleep(for: .seconds(3))
+                        try? await Task.sleep(for: .seconds(item.kind.dwellSeconds))
                         withAnimation { self.item = nil }
                     }
             }
