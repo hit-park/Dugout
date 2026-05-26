@@ -36,6 +36,9 @@ dependencies {
     // Apple JWT 검증 (JWKS 기반 서명 검증)
     implementation("com.nimbusds:nimbus-jose-jwt:9.41.2")
 
+    // Firebase Admin SDK (FCM 푸시 알림)
+    implementation("com.google.firebase:firebase-admin:9.4.1")
+
     // Kotlin
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")

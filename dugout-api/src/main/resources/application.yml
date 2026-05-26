@@ -31,6 +31,11 @@ dugout:
     base-url: ${DUGOUT_AI_BASE_URL:http://localhost:8001}
     timeout-ms: 5000
 
+fcm:
+  enabled: ${FCM_ENABLED:false}
+  credentials-path: ${FCM_CREDENTIALS_PATH:}
+  project-id: ${FCM_PROJECT_ID:}
+
 oauth:
   kakao:
     user-info-url: https://kapi.kakao.com/v2/user/me
