@@ -4,7 +4,6 @@ import com.dugout.api.domain.match.entity.Match
 import com.dugout.api.domain.match.repository.MatchRepository
 import com.dugout.api.domain.notification.event.LineupConfirmedEvent
 import com.dugout.api.domain.team.repository.TeamMemberRepository
-import com.dugout.api.domain.user.entity.User
 import com.dugout.api.domain.user.repository.UserRepository
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
@@ -23,6 +22,7 @@ class NotificationService(
     private val matchRepository: MatchRepository,
     private val teamMemberRepository: TeamMemberRepository,
     private val fcmClient: FcmClient,
+    private val tokenCleanupService: TokenCleanupService,
 ) {
     @Transactional
     fun updateFcmToken(userId: Long, token: String?) {
@@ -48,7 +48,7 @@ class NotificationService(
         val match = matchRepository.findById(event.matchId).orElse(null) ?: return
         val payload = buildLineupConfirmedMessage(match, event.lineupId)
         val result = fcmClient.sendToTokens(tokens, payload)
-        cleanUpInvalidTokens(targetUsers, result.invalidTokens)
+        tokenCleanupService.clearInvalidTokens(result.invalidTokens)
     }
 
     private fun buildLineupConfirmedMessage(match: Match, lineupId: Long): FcmMessage {
@@ -71,12 +71,6 @@ class NotificationService(
                 "lineupId" to lineupId.toString(),
             ),
         )
-    }
-
-    @Transactional
-    fun cleanUpInvalidTokens(users: List<User>, invalidTokens: List<String>) {
-        if (invalidTokens.isEmpty()) return
-        users.filter { it.fcmToken in invalidTokens }.forEach { it.fcmToken = null }
     }
 
     private fun isValidFcmTokenShape(token: String): Boolean {
