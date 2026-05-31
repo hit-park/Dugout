@@ -69,8 +69,7 @@
   │              External Services                │
   │  ┌───────────┐ ┌──────────┐ ┌─────────────┐  │
   │  │ FCM       │ │ 카카오    │ │ 기상청 API  │  │
-  │  │ (Push)    │ │ 알림톡   │ │ (날씨)      │  │
-  │  │           │ │ + OAuth  │ │             │  │
+  │  │ (Push)    │ │ OAuth    │ │ (날씨)      │  │
   │  └───────────┘ └──────────┘ └─────────────┘  │
   │  ┌───────────┐ ┌──────────┐ ┌─────────────┐  │
   │  │ 네이버    │ │ Google   │ │ Apple Sign  │  │
@@ -94,8 +93,7 @@
 | Database | PostgreSQL + PostGIS | 16 | 지리 쿼리, JSONB, 안정성 |
 | Cache | Redis | 7.x | 실시간 출석 상태, 세션 |
 | Message Queue | Redis Streams (초기) | — | 별도 MQ 없이 Redis로 통합 |
-| Push | Firebase Cloud Messaging | — | iOS/Android 통합 |
-| 알림톡 | 카카오 비즈메시지 API | — | 한국 시장 필수 도달 채널 |
+| Push | Firebase Cloud Messaging | 11.x | iOS/Android 통합, Spark plan 무료. Phase 3-C 도입 |
 | Storage | AWS S3 | — | 프로필 이미지, 라인업 카드 |
 | Infra | AWS (ECS Fargate + RDS) | — | 서버리스 컨테이너, 관리 최소화 |
 | CI/CD | GitHub Actions | — | 자동 빌드/배포 |
@@ -336,8 +334,7 @@ CREATE TABLE users (
     profile_img_url VARCHAR(500),
     provider        VARCHAR(20) NOT NULL,    -- KAKAO, NAVER, GOOGLE, APPLE
     provider_id     VARCHAR(255) NOT NULL,
-    fcm_token       VARCHAR(500),
-    kakao_alimtalk_agreed BOOLEAN DEFAULT FALSE,  -- 알림톡 수신 동의
+    fcm_token       VARCHAR(500),  -- FCM 푸시 토큰 (디바이스 1개 가정, Phase 3-C)
     created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),
     UNIQUE (provider, provider_id)
@@ -952,64 +949,47 @@ def update_elo(winner_elo, loser_elo, is_draw=False):
 
 ## 4. 알림 시스템 설계
 
-### 4-1. 카카오 알림톡 연동
+### 4-1. FCM 통합 (Firebase Cloud Messaging)
 
-```kotlin
-// 카카오 비즈메시지 알림톡 발송
-class KakaoAlimtalkClient(
-    private val apiKey: String,
-    private val senderKey: String
-) {
-    // 템플릿 코드 (사전 등록 필요)
-    object Templates {
-        const val MATCH_CREATED = "TPL_MATCH_01"      // 새 경기 일정
-        const val ATTENDANCE_REMIND = "TPL_ATTEND_01"  // 출석 리마인드
-        const val LINEUP_CONFIRMED = "TPL_LINEUP_01"   // 라인업 확정
-        const val FEE_REQUEST = "TPL_FEE_01"           // 회비 청구
-        const val MATCHING_RECEIVED = "TPL_MATCH_02"   // 매칭 요청 수신
-    }
+Phase 3-C 에서 도입. 카카오 알림톡은 발송당 과금 비용 + 비즈니스 채널 심사 부담으로 영구 제외하고 FCM 만 사용한다. 앱 미설치자 도달은 비범위.
 
-    // 알림톡 메시지 예시 (사전 심사 필요)
-    /*
-    [더그아웃] 출석 투표 안내
+**아키텍처:**
+- `global/fcm/FcmClient` — Firebase Admin SDK 단일 래퍼. `sendToTokens(tokens, message)` 시그니처. `fcm.enabled=false` 면 stub 동작.
+- `domain/notification/` — controller (PATCH /api/v1/users/me/fcm-token) / service (다른 도메인이 호출하는 진입점) / dto / event
+- `users.fcm_token` 컬럼 직접 사용. 별도 토큰 테이블 없음 (디바이스별 분리는 후속 Phase).
 
-    #{팀명} 경기 일정이 등록되었습니다.
+**Payload 구조:**
+- `notification` 블록: title + body (iOS 시스템이 자동 표시)
+- `data` 블록: `type` / `matchId` / `teamId` / `lineupId` (deeplink 후속 Phase 용)
+- `apns.payload.aps`: sound + badge
 
-    📅 #{날짜} #{시간}
-    🏟 #{구장명}
-    ⚾ vs #{상대팀}
+**실패 처리:**
+- `UNREGISTERED` / `INVALID_ARGUMENT` → `users.fcm_token = null` 자동 정리 (`TokenCleanupService` 별도 빈, `REQUIRES_NEW` 트랜잭션)
+- 다른 FCM 오류 → 로그만, 비즈니스 트랜잭션에 영향 X
 
-    출석 투표를 해주세요!
-    #{출석투표URL}
+**설정 (application.yml):**
+- `fcm.enabled` — 로컬 false 기본
+- `fcm.credentials-path` — service account JSON 경로 (env)
+- `fcm.project-id` — Firebase 프로젝트 ID
 
-    현재 참가 #{참가수}명 / 불참 #{불참수}명 / 미응답 #{미응답수}명
-    */
-}
-```
+### 4-2. 이벤트 기반 발송 플로우
 
-### 4-2. 알림 발송 플로우
+Phase 3-C 범위는 **라인업 확정 broadcast 1종**. 다른 알림(매치 등록, 출석 리마인드 cron, 알림 설정 UI)은 후속 Phase.
 
 ```
-경기 일정 등록
-  → NotificationService.sendMatchCreated(match)
-    → 전체 멤버에게 푸시 + 알림톡 수신 동의자에게 알림톡
-
-경기 48시간 전 (스케줄러)
-  → AttendanceReminderScheduler.sendFirstReminder()
-    → 미응답자에게 푸시
-    → 주장에게 현황 요약 푸시
-
-경기 24시간 전 (스케줄러)
-  → AttendanceReminderScheduler.sendSecondReminder()
-    → 미응답자에게 푸시 + 알림톡
-    → AI 출석 예측 실행 → 주장에게 예측 결과 알림
-    → 예상 인원 부족 시 용병 모집 추천 알림
-
-라인업 확정
-  → NotificationService.sendLineupConfirmed(lineup)
-    → 전체 멤버에게 푸시 + 알림톡
-    → 라인업 카드 이미지 생성 → 카카오톡 공유 링크 포함
+LineupController.confirmLineup
+  └─ LineupService.confirmLineup() [@Transactional]
+       ├─ Lineup.isConfirmed = true
+       └─ publishEvent(LineupConfirmedEvent)
+                            ↓ AFTER_COMMIT
+NotificationService.onLineupConfirmed [@TransactionalEventListener]
+  ├─ teamMemberRepository.findByTeamIdAndIsActiveTrue
+  ├─ tokens = members.filter(주장 제외).mapNotNull(fcmToken)
+  ├─ fcmClient.sendToTokens(tokens, payload)
+  └─ invalidTokens → TokenCleanupService.clearInvalidTokens (REQUIRES_NEW)
 ```
+
+이 패턴이 도메인 의존 역전을 보장한다. `LineupService` 는 `NotificationService` 를 import 하지 않으며, 이벤트만 발행. `LineupConfirmedEvent` 자체는 consumer 인 `domain/notification/event/` 에 배치.
 
 ---
 
@@ -1134,7 +1114,7 @@ DugoutTeamFeature
 
 > Attendance 도메인은 `DugoutMatchFeature` 내부의 `Sources/{Domain,Data,Presentation}/`에 함께 포함되어 있다 (별도 모듈 아님). 출석 응답이 경기 컨텍스트에 종속적이라 모듈 분리보다 폴더 격리가 결합도·오버헤드 측면에서 유리하다고 판단.
 
-`DugoutLineupFeature`는 Phase 4-A·B 에서 추가된 모듈로, 백엔드 `/api/v1/matches/{matchId}/lineup`(GET/POST/PUT) + `/recommend` + `/confirm` 엔드포인트를 사용한다. 출석자 조인용으로 `/api/v1/matches/{matchId}/attendance` + `/api/v1/teams/{teamId}/members` 도 호출. 주장/매니저는 AI 추천(헝가리안 알고리즘 — dugout-ai)을 받아 편집·저장·확정하고, 라인업 공유는 iOS 자체 렌더(`ImageRenderer` + `UIActivityViewController`)로 처리한다 (백엔드 `/card` 미사용). 일반 멤버는 결과를 readonly 로 조회. 카카오 알림톡·푸시 알림은 후속 Phase 예정이다.
+`DugoutLineupFeature`는 Phase 4-A·B 에서 추가된 모듈로, 백엔드 `/api/v1/matches/{matchId}/lineup`(GET/POST/PUT) + `/recommend` + `/confirm` 엔드포인트를 사용한다. 출석자 조인용으로 `/api/v1/matches/{matchId}/attendance` + `/api/v1/teams/{teamId}/members` 도 호출. 주장/매니저는 AI 추천(헝가리안 알고리즘 — dugout-ai)을 받아 편집·저장·확정하고, 라인업 공유는 iOS 자체 렌더(`ImageRenderer` + `UIActivityViewController`)로 처리한다 (백엔드 `/card` 미사용). 일반 멤버는 결과를 readonly 로 조회. 푸시 알림은 Phase 3-C 에서 FCM 으로 도입 (라인업 확정 broadcast). 카카오 알림톡은 비용/운영 부담으로 영구 스코프 외. 매치 등록 broadcast / 출석 리마인드 cron / 알림 설정 UI 는 후속 Phase.
 
 다음 페이즈에 추가될 모듈(Finance / Matching / Mercenary / Ground / Settings 등)은 같은 Feature 단위 패턴(Domain / Data / Presentation)으로 신설. CoreNetwork + DesignSystem은 모든 Feature가 직접 의존하고, 다른 Feature에 의존할 때만 추가 엣지로 명시.
 
@@ -1481,8 +1461,8 @@ NavigationStack { content }
 | ElastiCache Redis | cache.t3.micro | ~$15 |
 | ALB | — | ~$20 |
 | S3 + CloudFront | — | ~$5 |
-| 카카오 알림톡 | 건당 ~8원 | ~$30 (5,000건) |
-| **합계** | | **~$175/월 (약 23만원)** |
+| FCM (Firebase Spark plan) | 무료 | $0 |
+| **합계** | | **~$145/월 (약 19만원)** |
 
 ### 6-3. CI/CD 파이프라인
 
@@ -1600,9 +1580,9 @@ AuthService.oauthLogin(provider, request)
 | API 응답시간 (p95) | > 500ms | Slack 알림 |
 | API 에러율 | > 1% | Slack 알림 |
 | AI 서비스 응답시간 | > 5s | Slack 알림 |
-| 알림톡 발송 실패율 | > 5% | Slack 알림 |
 | DB 커넥션 | > 80% | Slack 알림 |
-| 푸시 발송 실패율 | > 10% | Slack 알림 |
+| FCM 발송 실패율 | > 10% | Slack 알림 |
+| FCM invalid token 누적률 | > 5%/주 | Slack 알림 (디바이스 만료 추적) |
 
 ### 8-2. 로깅
 
@@ -1622,7 +1602,7 @@ AuthService.oauthLogin(provider, request)
 | W5-6 | Match, Attendance API | 규칙 기반 출석 예측 | 팀 홈, 일정 캘린더 |
 | W7-8 | Lineup API | 라인업 추천 알고리즘 | 출석 투표, 현황 UI |
 | W9-10 | Finance API, 알림 시스템 | — | 라인업 뷰 (다이아몬드 + 편집) |
-| W11-12 | 카카오 알림톡 연동 | — | 회비 관리, 알림 설정 |
+| W11-12 | FCM 푸시 확장 (매치 등록 broadcast / 출석 리마인드 cron) | — | 회비 관리, 알림 설정 |
 | W13-14 | Matching API | 매칭 엔진, ELO | 매칭 홈, 요청 등록 |
 | W15-16 | Mercenary API | 용병 매칭 | 용병, 구장 |
 | W17-18 | Ground API, 전체 통합 테스트 | 통합 테스트 | 통합 테스트, 버그 수정 |

@@ -98,6 +98,19 @@ Features/{FeatureName}/Sources/
 - 운영 도메인에 대한 `NSAllowsArbitraryLoads: true` 절대 금지
 - 카카오 등 SDK용 URL Scheme 추가 시 `Project.swift`의 `infoPlist.extendingDefault`에 명시
 
+## Firebase / FCM 셋업 (Phase 3-C 도입)
+
+푸시 알림은 FCM 으로 처리. 카카오 알림톡은 영구 제외.
+
+1. Firebase 콘솔에서 iOS 앱 등록 (Bundle ID: `com.dugout.Dugout`)
+2. `GoogleService-Info.plist` 다운로드 → `App/Resources/` 에 저장
+3. `tuist install && tuist generate` 후 빌드
+4. 실기기에서만 푸시 수신 가능 (시뮬레이터는 iOS 16+ 부터 일부 지원 — `xcrun simctl push` 로 테스트)
+
+`App/Sources/AppDelegate.swift` 는 `GoogleService-Info.plist` 가 번들에 없으면 `FirebaseApp.configure()` 호출을 스킵 (개발 빌드는 plist 없이도 작동). 운영 빌드 전에는 plist 를 반드시 추가하고 가드를 제거 검토.
+
+`App/Sources/Notifications/PushPermissionCoordinator.swift` (actor) 가 토큰 동기화 / 권한 / 로그아웃 정리를 캡슐화. AuthViewModel 은 푸시 로직과 무관.
+
 ## 빌드 destination 선택
 
 PR 검증용 빌드는 `generic/platform=iOS Simulator` 권장 (디바이스명 의존성 제거).

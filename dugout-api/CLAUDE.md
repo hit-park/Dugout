@@ -84,6 +84,21 @@ throw BusinessException(ErrorCode.TEAM_NOT_FOUND)
 
 키·secret은 `application.yml` 직접 박기 금지 → 환경변수 참조.
 
+## FCM 셋업 (Phase 3-C 도입)
+
+`global/fcm/` 에 Firebase Admin SDK 래퍼. `fcm.enabled=false` 면 stub 모드 — 함수는 호출되지만 실제 발송 X. 로컬 개발 기본값.
+
+실제 발송이 필요한 경우:
+1. Firebase 콘솔 → Project Settings → Service Accounts → "Generate new private key"
+2. 다운로드된 JSON 을 git 에 올리지 말고 안전한 위치에 저장 (`.env`, secrets manager 등)
+3. 환경변수 셋업:
+   - `FCM_ENABLED=true`
+   - `FCM_CREDENTIALS_PATH=/absolute/path/to/firebase-adminsdk.json`
+   - `FCM_PROJECT_ID=your-firebase-project-id`
+4. 백엔드 재기동 → 로그에서 `FCM enabled (project=...)` 확인
+
+토큰 로깅 시 `take(8)` 으로 prefix 만 — raw token 출력 절대 금지.
+
 ## API 설계 규칙
 
 - 모든 endpoint는 `/api/v1/*` prefix
