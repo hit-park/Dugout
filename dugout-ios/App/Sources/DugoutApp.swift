@@ -4,6 +4,7 @@ import DugoutAuthFeature
 
 @main
 struct DugoutApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var router = AppRouter()
     @State private var authViewModel = AuthViewModel()
     @State private var onboardingViewModel = OnboardingViewModel()
