@@ -13,6 +13,7 @@ import com.dugout.api.domain.lineup.repository.LineupEntryRepository
 import com.dugout.api.domain.lineup.repository.LineupRepository
 import com.dugout.api.domain.match.entity.Match
 import com.dugout.api.domain.match.repository.MatchRepository
+import com.dugout.api.domain.notification.event.LineupConfirmedEvent
 import com.dugout.api.domain.team.entity.TeamRole
 import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.user.entity.User
@@ -22,6 +23,7 @@ import com.dugout.api.global.ai.AiLineupRecommendRequest
 import com.dugout.api.global.ai.DugoutAiClient
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -35,6 +37,7 @@ class LineupService(
     private val userRepository: UserRepository,
     private val teamMemberRepository: TeamMemberRepository,
     private val dugoutAiClient: DugoutAiClient,
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
 
     /**
@@ -143,6 +146,16 @@ class LineupService(
             lineup.confirm()
         }
         val entries = lineupEntryRepository.findByLineupIdOrderByBattingOrderAsc(lineup.id)
+
+        applicationEventPublisher.publishEvent(
+            LineupConfirmedEvent(
+                lineupId = lineup.id,
+                matchId = lineup.match.id,
+                teamId = match.team.id,
+                confirmedBy = userId,
+            ),
+        )
+
         return LineupResponse.of(lineup, entries)
     }
 

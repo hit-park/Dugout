@@ -4,6 +4,7 @@ import DugoutAuthFeature
 
 @main
 struct DugoutApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var router = AppRouter()
     @State private var authViewModel = AuthViewModel()
     @State private var onboardingViewModel = OnboardingViewModel()
@@ -17,6 +18,11 @@ struct DugoutApp: App {
             rootView
                 .preferredColorScheme(.light)
                 .task { await checkAuthOnLaunch() }
+                .onChange(of: authViewModel.isAuthenticated) { _, isAuth in
+                    if !isAuth {
+                        Task { await PushPermissionCoordinator.shared.clearToken() }
+                    }
+                }
         }
     }
 
@@ -34,7 +40,9 @@ struct DugoutApp: App {
         case .onboarding(let step):
             onboardingView(for: step)
         case .main:
-            MainTabView(authViewModel: authViewModel, router: router)
+            PushPermissionGate {
+                MainTabView(authViewModel: authViewModel, router: router)
+            }
         }
     }
 

@@ -33,6 +33,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
+import org.springframework.context.ApplicationEventPublisher
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Optional
@@ -47,6 +48,7 @@ class LineupServiceTest {
     @Mock lateinit var userRepository: UserRepository
     @Mock lateinit var teamMemberRepository: TeamMemberRepository
     @Mock lateinit var dugoutAiClient: DugoutAiClient
+    @Mock lateinit var applicationEventPublisher: ApplicationEventPublisher
 
     private lateinit var service: LineupService
 
@@ -55,6 +57,7 @@ class LineupServiceTest {
         service = LineupService(
             lineupRepository, lineupEntryRepository, matchRepository,
             attendanceRepository, userRepository, teamMemberRepository, dugoutAiClient,
+            applicationEventPublisher,
         )
     }
 

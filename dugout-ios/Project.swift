@@ -115,6 +115,8 @@ let app: Target = .target(
         "UIApplicationSceneManifest": [
             "UIApplicationSupportsMultipleScenes": false,
         ],
+        "UIBackgroundModes": ["remote-notification"],
+        "FirebaseAppDelegateProxyEnabled": false,
         "NSAppTransportSecurity": [
             "NSAllowsArbitraryLoads": true,
             "NSExceptionDomains": [
@@ -132,6 +134,7 @@ let app: Target = .target(
         .target(name: "DugoutTeamFeature"),
         .target(name: "DugoutMatchFeature"),
         .target(name: "DugoutLineupFeature"),
+        .external(name: "FirebaseMessaging"),
     ],
     settings: .settings(base: baseSettings)
 )
