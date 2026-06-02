@@ -1,4 +1,4 @@
-package com.dugout.api.domain.notification
+package com.dugout.api.domain.notification.event
 
 enum class NotificationType {
     MATCH_CREATED,

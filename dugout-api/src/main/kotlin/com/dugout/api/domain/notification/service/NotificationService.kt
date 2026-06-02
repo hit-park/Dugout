@@ -2,8 +2,8 @@ package com.dugout.api.domain.notification.service
 
 import com.dugout.api.domain.match.entity.Match
 import com.dugout.api.domain.match.repository.MatchRepository
-import com.dugout.api.domain.notification.NotificationType
 import com.dugout.api.domain.notification.event.LineupConfirmedEvent
+import com.dugout.api.domain.notification.event.NotificationType
 import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.user.repository.UserRepository
 import com.dugout.api.global.error.BusinessException
