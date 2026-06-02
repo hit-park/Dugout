@@ -85,6 +85,9 @@ enum class ErrorCode(
     AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 서비스에 연결할 수 없습니다"),
     AI_REQUEST_FAILED(HttpStatus.BAD_GATEWAY, "AI 서비스 응답이 비정상입니다"),
 
+    // Record
+    RECORD_NOT_FOUND(HttpStatus.NOT_FOUND, "타석 기록을 찾을 수 없습니다"),
+
     // Notification
     NOTIFICATION_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "FCM 토큰 형식이 올바르지 않습니다"),
 }
