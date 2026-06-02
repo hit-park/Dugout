@@ -2,6 +2,7 @@ package com.dugout.api.domain.notification.service
 
 import com.dugout.api.domain.match.entity.Match
 import com.dugout.api.domain.match.repository.MatchRepository
+import com.dugout.api.domain.notification.NotificationType
 import com.dugout.api.domain.notification.event.LineupConfirmedEvent
 import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.user.repository.UserRepository
@@ -64,11 +65,11 @@ class NotificationService(
         return FcmMessage(
             title = "라인업이 확정됐어요",
             body = parts.joinToString(" · "),
-            data = mapOf(
-                "type" to "LINEUP_CONFIRMED",
-                "matchId" to match.id.toString(),
-                "teamId" to match.team.id.toString(),
-                "lineupId" to lineupId.toString(),
+            data = notificationData(
+                type = NotificationType.LINEUP_CONFIRMED,
+                matchId = match.id,
+                teamId = match.team.id,
+                lineupId = lineupId,
             ),
         )
     }
@@ -77,5 +78,17 @@ class NotificationService(
         return token.length in 100..300 && token.all {
             it.isLetterOrDigit() || it == '-' || it == '_' || it == ':'
         }
+    }
+
+    private fun notificationData(
+        type: NotificationType,
+        matchId: Long,
+        teamId: Long,
+        lineupId: Long? = null,
+    ): Map<String, String> = buildMap {
+        put("type", type.name)
+        put("matchId", matchId.toString())
+        put("teamId", teamId.toString())
+        lineupId?.let { put("lineupId", it.toString()) }
     }
 }
