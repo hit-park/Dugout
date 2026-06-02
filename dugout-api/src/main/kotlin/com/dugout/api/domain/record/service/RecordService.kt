@@ -26,6 +26,9 @@ class RecordService(
         requireTeamMember(match.team.id, userId)
         val teamMember = teamMemberRepository.findById(request.teamMemberId)
             .orElseThrow { BusinessException(ErrorCode.TEAM_MEMBER_NOT_FOUND) }
+        if (teamMember.team.id != match.team.id) {
+            throw BusinessException(ErrorCode.NOT_TEAM_MEMBER)
+        }
 
         val saved = plateAppearanceRepository.save(
             PlateAppearance(
