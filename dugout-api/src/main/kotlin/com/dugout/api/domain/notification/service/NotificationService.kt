@@ -1,9 +1,14 @@
 package com.dugout.api.domain.notification.service
 
+import com.dugout.api.domain.attendance.entity.AttendanceStatus
+import com.dugout.api.domain.attendance.entity.isMeaningfulAttendanceChange
 import com.dugout.api.domain.match.entity.Match
 import com.dugout.api.domain.match.repository.MatchRepository
+import com.dugout.api.domain.notification.event.AttendanceChangedEvent
 import com.dugout.api.domain.notification.event.LineupConfirmedEvent
+import com.dugout.api.domain.notification.event.MatchCreatedEvent
 import com.dugout.api.domain.notification.event.NotificationType
+import com.dugout.api.domain.team.entity.TeamRole
 import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.user.repository.UserRepository
 import com.dugout.api.global.error.BusinessException
@@ -52,6 +57,43 @@ class NotificationService(
         tokenCleanupService.clearInvalidTokens(result.invalidTokens)
     }
 
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun onMatchCreated(event: MatchCreatedEvent) {
+        val members = teamMemberRepository.findByTeamIdAndIsActiveTrue(event.teamId)
+        val targetUsers = members.map { it.user }.filter { it.id != event.createdBy }
+        val tokens = targetUsers.mapNotNull { it.fcmToken }
+        if (tokens.isEmpty()) return
+
+        val match = matchRepository.findById(event.matchId).orElse(null) ?: return
+        val payload = FcmMessage(
+            title = "새 경기 일정이 등록됐어요",
+            body = matchSummary(match),
+            data = notificationData(NotificationType.MATCH_CREATED, match.id, match.team.id),
+        )
+        val result = fcmClient.sendToTokens(tokens, payload)
+        tokenCleanupService.clearInvalidTokens(result.invalidTokens)
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun onAttendanceChanged(event: AttendanceChangedEvent) {
+        if (!isMeaningfulAttendanceChange(event.previous, event.new)) return
+
+        val captain = teamMemberRepository.findByTeamIdAndIsActiveTrue(event.teamId)
+            .firstOrNull { it.role == TeamRole.CAPTAIN } ?: return
+        if (captain.user.id == event.actorUserId) return
+        val token = captain.user.fcmToken ?: return
+
+        val actor = userRepository.findById(event.actorUserId).orElse(null) ?: return
+        val match = matchRepository.findById(event.matchId).orElse(null) ?: return
+        val payload = FcmMessage(
+            title = "출석 응답이 변경됐어요",
+            body = "${actor.nickname}님 · ${attendanceLabel(event.new)} · ${matchSummary(match)}",
+            data = notificationData(NotificationType.ATTENDANCE_CHANGED, match.id, match.team.id),
+        )
+        val result = fcmClient.sendToTokens(listOf(token), payload)
+        tokenCleanupService.clearInvalidTokens(result.invalidTokens)
+    }
+
     private fun buildLineupConfirmedMessage(match: Match, lineupId: Long): FcmMessage {
         val date = match.matchDate
         val dateText = "${date.monthValue}월 ${date.dayOfMonth}일 (${
@@ -90,5 +132,25 @@ class NotificationService(
         put("matchId", matchId.toString())
         put("teamId", teamId.toString())
         lineupId?.let { put("lineupId", it.toString()) }
+    }
+
+    private fun matchSummary(match: Match): String {
+        val date = match.matchDate
+        val dateText = "${date.monthValue}월 ${date.dayOfMonth}일 (${
+            date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.KOREAN)
+        })"
+        return buildList {
+            add(dateText)
+            match.groundName?.let { add(it) }
+            match.opponentName?.let { add("vs $it") }
+        }.joinToString(" · ")
+    }
+
+    private fun attendanceLabel(status: AttendanceStatus): String = when (status) {
+        AttendanceStatus.ATTEND -> "참석"
+        AttendanceStatus.ABSENT -> "불참"
+        AttendanceStatus.MAYBE -> "미정"
+        AttendanceStatus.LATE -> "늦참"
+        AttendanceStatus.EARLY_LEAVE -> "조퇴"
     }
 }

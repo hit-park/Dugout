@@ -23,6 +23,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
+import org.springframework.context.ApplicationEventPublisher
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Optional
@@ -33,12 +34,13 @@ class MatchServiceTest {
     @Mock lateinit var matchRepository: MatchRepository
     @Mock lateinit var teamRepository: TeamRepository
     @Mock lateinit var teamMemberRepository: TeamMemberRepository
+    @Mock lateinit var eventPublisher: ApplicationEventPublisher
 
     private lateinit var matchService: MatchService
 
     @BeforeEach
     fun setUp() {
-        matchService = MatchService(matchRepository, teamRepository, teamMemberRepository)
+        matchService = MatchService(matchRepository, teamRepository, teamMemberRepository, eventPublisher)
     }
 
     private fun sampleTeam() = Team.create(name = "두갓FC", region = "서울 강남구")
