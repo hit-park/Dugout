@@ -17,6 +17,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -31,11 +32,16 @@ class AttendanceReminderScheduler(
 ) {
     private val log = LoggerFactory.getLogger(AttendanceReminderScheduler::class.java)
 
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "0 0 * * * *", zone = SEOUL_ZONE_ID)
     @Transactional
     fun sendReminders() {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.now(SEOUL_ZONE)
         ReminderWindow.entries.forEach { window -> sendForWindow(window, now) }
+    }
+
+    companion object {
+        private const val SEOUL_ZONE_ID = "Asia/Seoul"
+        private val SEOUL_ZONE: ZoneId = ZoneId.of(SEOUL_ZONE_ID)
     }
 
     private fun sendForWindow(window: ReminderWindow, now: LocalDateTime) {
