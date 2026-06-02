@@ -10,6 +10,18 @@ class AttendeeProfile(BaseModel):
     bench_ratio_recent: float = Field(ge=0.0, le=1.0, default=0.0, description="최근 N경기 벤치 비율")
     bats_left: bool = False          # 좌타 여부 (타순 좌우 교차용)
 
+    # 타석 기록(L2) raw 카운트 — 전부 0이면 콜드 스타트로 간주해 좌우타 교차 폴백
+    singles: int = 0
+    doubles: int = 0
+    triples: int = 0
+    home_runs: int = 0
+    walks: int = 0
+    hit_by_pitch: int = 0
+    sacrifice_flies: int = 0
+    strikeouts: int = 0
+    in_play_outs: int = 0
+    reached_on_errors: int = 0
+
 
 class LineupRecommendRequest(BaseModel):
     match_id: int
