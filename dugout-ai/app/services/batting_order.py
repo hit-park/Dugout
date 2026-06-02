@@ -6,6 +6,7 @@
 - 콜드 스타트(기록 0): None 반환 → 호출 측이 좌우타 교차로 폴백
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from app.schemas.lineup import AttendeeProfile
@@ -61,3 +62,44 @@ def _adjusted(a: AttendeeProfile, team_obp: float, team_iso: float) -> tuple[flo
     raw_iso = (c.total_bases - c.hits) / c.ab if c.ab else 0.0
     adj_iso = (raw_iso * c.pa + team_iso * K_SHRINKAGE) / (c.pa + K_SHRINKAGE)
     return adj_obp, adj_iso
+
+
+def order(starters: list[AttendeeProfile]) -> dict[int, int] | None:
+    """선발 9명의 타순(user_id -> 1..9)을 반환. 기록 없으면 None(폴백 신호)."""
+    if not has_records(starters):
+        return None
+
+    team_obp, team_iso = _team_averages(starters)
+    adj = {
+        s.user_id: _adjusted(s, team_obp, team_iso)
+        for s in starters
+    }
+
+    def leadoff(uid: int) -> float:
+        return adj[uid][0]                          # adj_obp
+
+    def cleanup(uid: int) -> float:
+        obp, iso = adj[uid]
+        return 0.7 * iso + 0.3 * obp
+
+    def overall(uid: int) -> float:
+        obp, iso = adj[uid]
+        return obp + 0.5 * iso
+
+    remaining = [s.user_id for s in starters]
+    slot_of: dict[int, int] = {}
+
+    def take(slot: int, scorer: Callable[[int], float]) -> None:
+        chosen = max(remaining, key=scorer)
+        remaining.remove(chosen)
+        slot_of[chosen] = slot
+
+    take(2, overall)    # The Book 반전: 2번에 종합 최고타자
+    take(1, leadoff)    # 순수 출루형
+    take(4, cleanup)    # 최고 장타
+    take(3, overall)
+    take(5, cleanup)
+    for i, uid in enumerate(sorted(remaining, key=leadoff, reverse=True)):
+        slot_of[uid] = 6 + i        # 6~9번: adj_OBP 내림차순
+
+    return slot_of

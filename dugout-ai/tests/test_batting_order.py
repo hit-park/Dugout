@@ -33,3 +33,22 @@ def test_shrinkage_pulls_small_sample_toward_team_mean():
     adj_obp, _ = batting_order._adjusted(small, team_obp, team_iso)
     assert adj_obp < 0.500                          # k=50이라 5타석은 평균 쪽으로 강하게 수축
     assert adj_obp > team_obp                        # 그래도 평균보다는 높음
+
+
+def test_order_puts_best_overall_at_second_and_power_at_fourth():
+    # 9명: 한 명은 종합 최고(고출루+고장타), 한 명은 순수 장타, 한 명은 순수 출루
+    best = _player(1, singles=40, doubles=20, home_runs=20, walks=40)   # 고OBP+고ISO
+    power = _player(2, home_runs=40, strikeouts=60)                     # 고ISO 저OBP
+    onbase = _player(3, singles=30, walks=60, in_play_outs=30)          # 고OBP 저ISO
+    fillers = [_player(i, singles=10, in_play_outs=40) for i in range(4, 10)]
+    result = batting_order.order([best, power, onbase, *fillers])
+
+    assert result is not None
+    assert result[1] == 2          # 종합 최고타자 → 2번 (The Book 반전)
+    assert result[2] == 4          # 순수 장타 → 4번
+    assert result[3] == 1          # 순수 출루 → 1번
+
+
+def test_order_returns_none_on_cold_start():
+    cold = [_player(i) for i in range(1, 10)]   # 전원 기록 0
+    assert batting_order.order(cold) is None
