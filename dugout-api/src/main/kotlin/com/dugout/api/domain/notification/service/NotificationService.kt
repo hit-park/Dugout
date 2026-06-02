@@ -16,6 +16,7 @@ import com.dugout.api.global.error.ErrorCode
 import com.dugout.api.global.fcm.FcmClient
 import com.dugout.api.global.fcm.FcmMessage
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
@@ -42,6 +43,7 @@ class NotificationService(
         user.fcmToken = normalized
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onLineupConfirmed(event: LineupConfirmedEvent) {
         val members = teamMemberRepository.findByTeamIdAndIsActiveTrue(event.teamId)
@@ -57,6 +59,7 @@ class NotificationService(
         tokenCleanupService.clearInvalidTokens(result.invalidTokens)
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onMatchCreated(event: MatchCreatedEvent) {
         val members = teamMemberRepository.findByTeamIdAndIsActiveTrue(event.teamId)
@@ -74,6 +77,7 @@ class NotificationService(
         tokenCleanupService.clearInvalidTokens(result.invalidTokens)
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onAttendanceChanged(event: AttendanceChangedEvent) {
         if (!isMeaningfulAttendanceChange(event.previous, event.new)) return
