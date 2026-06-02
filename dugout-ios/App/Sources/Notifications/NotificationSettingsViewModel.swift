@@ -25,6 +25,7 @@ final class NotificationSettingsViewModel: ObservableObject {
 
     func load() async {
         isLoading = true
+        errorMessage = nil
         defer { isLoading = false }
         do {
             apply(try await repository.fetch())
@@ -34,6 +35,7 @@ final class NotificationSettingsViewModel: ObservableObject {
     }
 
     func save() async {
+        errorMessage = nil
         do {
             apply(try await repository.update(currentDTO()))
         } catch {
