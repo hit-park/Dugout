@@ -175,6 +175,13 @@ dugout-api/
 │   │   │   ├── service/LineupService.kt
 │   │   │   └── controller/LineupController.kt
 │   │   │
+│   │   ├── record/           # 기록 (L2 타석 단위, 세이버매트릭스 입력)
+│   │   │   ├── entity/PlateAppearance.kt
+│   │   │   ├── repository/PlateAppearanceRepository.kt
+│   │   │   ├── service/RecordService.kt
+│   │   │   ├── dto/
+│   │   │   └── controller/RecordController.kt
+│   │   │
 │   │   ├── finance/          # 회비
 │   │   │   ├── entity/
 │   │   │   │   ├── Fee.kt
@@ -298,6 +305,17 @@ dugout-api/
 | POST | /api/v1/matching/requests/{id}/reject | 매칭 거절 |
 | POST | /api/v1/matching/results/{id} | 경기 결과 입력 |
 | POST | /api/v1/matching/results/{id}/review | 상대팀 평가 |
+
+#### 기록 (L2 타석 단위)
+
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| POST | /api/v1/records/plate-appearances | 타석 결과 기록 |
+| GET | /api/v1/records/plate-appearances | 타석 기록 목록 (경기/선수 필터) |
+| DELETE | /api/v1/records/plate-appearances/{id} | 타석 기록 삭제 (soft delete) |
+| GET | /api/v1/records/teams/{teamId}/batting-stats | 선수별 타격 집계 (raw 카운트) |
+
+> 라인업 추천(`POST /api/v1/lineup/recommend`)은 위 집계를 입력으로 받아 🤖 세이버매트릭스 타순을 산출하도록 확장된다 (3-3 참고).
 
 #### 용병
 
@@ -461,6 +479,24 @@ CREATE TABLE lineup_entries (
     is_bench        BOOLEAN DEFAULT FALSE,
     UNIQUE (lineup_id, user_id)
 );
+
+-- ============================================
+-- 기록 (L2 타석 단위) — 세이버매트릭스 타순 추천 입력
+-- ============================================
+CREATE TABLE plate_appearances (
+    id              BIGSERIAL PRIMARY KEY,
+    match_id        BIGINT NOT NULL REFERENCES matches(id),
+    team_member_id  BIGINT NOT NULL REFERENCES team_members(id),  -- 타자
+    result          VARCHAR(20) NOT NULL,
+                    -- SINGLE, DOUBLE, TRIPLE, HOME_RUN,
+                    -- WALK, HIT_BY_PITCH, SACRIFICE_FLY,
+                    -- STRIKEOUT, IN_PLAY_OUT, REACHED_ON_ERROR
+    rbi             INTEGER NOT NULL DEFAULT 0,
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    deleted_at      TIMESTAMP                   -- soft delete (BaseEntity)
+);
+-- L2: 타석당 1행. 주자상황·아웃카운트는 미수집(L3 보류).
+-- REACHED_ON_ERROR는 OBP·SLG 계산 시 아웃 취급하되 데이터로 보존.
 
 -- ============================================
 -- 회비
@@ -811,21 +847,12 @@ def recommend_lineup(attendees, team_settings) -> dict:
     starters = assign_positions(row_idx, col_idx, attendees, positions)
     bench = [p for p in attendees if p not in starters]
 
-    # ---- Step 2: 타순 배치 ----
-    batting_order = optimize_batting_order(starters, team_settings)
+    # ---- Step 2: 타순 배치 (세이버매트릭스 "The Book lite") ----
+    batting_order = optimize_batting_order(starters, batting_stats, team_settings)
     """
-    타순 로직:
-    1번: 출루율(OBP) 최고 or 가장 빠른 선수
-    2번: 컨택 능력 좋은 선수
-    3번: 최고 타자 (종합)
-    4번: 장타력 최고
-    5~6번: 중거리 타자
-    7~9번: 나머지 (투수 보통 9번)
-
-    Phase 1에서는 실제 기록이 없으므로:
-    - 자기 신고 타격 스타일 활용 (장타형/출루형/균형형)
-    - 좌우 타석 교차 배치 우선
-    Phase 2에서 실제 기록 반영
+    타석 기록(L2)이 있으면 shrinkage 보정 지표로 타순 산출 (3-3-1 참고).
+    기록이 없으면(콜드 스타트) 좌우타 교차 배치로 폴백.
+    수비 배치·출전권과 달리 타순은 두 모드(BALANCED/COMPETITIVE) 공통.
     """
 
     # ---- Step 3: DH 처리 ----
@@ -847,6 +874,56 @@ def recommend_lineup(attendees, team_settings) -> dict:
         "fairness_note": generate_fairness_note(starters, bench)
     }
 ```
+
+#### 3-3-1. 세이버매트릭스 타순 엔진 (The Book lite + shrinkage)
+
+정통 wOBA/마르코프는 채택하지 않는다. 사회인 야구 표본(시즌 50~100타석)에선
+wOBA 안정화 표본(~200타석)에 못 미쳐 거짓 정밀도가 되고, MLB 득점환경에서
+뽑은 선형 가중치도 맞지 않는다. 대신 세이버매트릭스의 *검증된 통찰만* 취하고
+작은 표본 노이즈는 shrinkage로 누른다.
+
+**(1) raw 카운트 → 기본 지표** (실책출루 ROE는 아웃 취급)
+
+```python
+PA  = singles + doubles + triples + hr + bb + hbp + sf + k + in_play_out + roe
+AB  = PA - bb - hbp - sf
+H   = singles + doubles + triples + hr
+OBP = (H + bb + hbp) / (AB + bb + hbp + sf)
+SLG = (singles + 2*doubles + 3*triples + 4*hr) / AB
+ISO = SLG - (H / AB)          # 순수 장타력 (안타 거품 제거)
+```
+
+**(2) shrinkage 보정** (필수 — `k=50` 가상 타석, 튜닝 가능 상수)
+
+```python
+adj_OBP = (player_on_base + team_avg_obp * K) / (player_denom + K)
+adj_ISO = (player_iso * PA + team_avg_iso * K) / (PA + K)
+# 5타석 → 거의 팀평균으로 수축, 200타석 → 거의 자기기록 유지
+# 라인업이 노이즈로 출렁이는 것을 막는 핵심 장치
+```
+
+**(3) The Book lite 슬로팅** (선발 9명, 수비배치 완료 상태)
+
+```python
+leadoff_score = adj_OBP
+cleanup_score = 0.7 * adj_ISO + 0.3 * adj_OBP
+overall_score = adj_OBP + 0.5 * adj_ISO
+
+# 채우는 순서 (세이버매트릭스 발견 그대로):
+#  2번 ← overall_score 최고  (The Book 반전: 2번에 최고 타자)
+#  1번 ← 남은 중 leadoff_score 최고 (순수 출루형)
+#  4번 ← 남은 중 cleanup_score 최고 (최고 장타)
+#  3번 ← 남은 중 overall_score 최고
+#  5번 ← 남은 중 cleanup_score 최고
+#  6~9번 ← 나머지 adj_OBP 내림차순
+# 각 배치에 이유 문자열("출루율 .420으로 2번 배치")을 응답에 포함
+```
+
+**(4) 콜드 스타트**: 기록 0이면 shrinkage가 전원을 팀평균으로 수축 → 점수
+동률 → 기존 `_interleave_batting_order`(좌우타 교차)로 자동 폴백. 기록이
+쌓일수록 세이버매트릭스 타순이 서서히 드러난다.
+
+> 설계 문서: `docs/superpowers/specs/2026-06-03-sabermetrics-lineup-design.md`
 
 ### 3-4. 매칭 엔진 상세
 
