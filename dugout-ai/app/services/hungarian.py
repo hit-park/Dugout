@@ -10,10 +10,8 @@
 4. 9명 초과는 DH 또는 벤치 (is_bench=True)
 """
 
-from typing import cast
-
 import numpy as np
-from scipy.optimize import linear_sum_assignment
+from scipy.optimize import linear_sum_assignment  # type: ignore[import-untyped]
 
 from app.core.errors import AIException
 from app.schemas.lineup import (
@@ -114,8 +112,8 @@ def _interleave_batting_order(starters: list[AttendeeProfile]) -> list[int]:
     rights = [s.user_id for s in starters if not s.bats_left]
 
     interleaved: list[int] = []
-    for left, right in zip(lefts, rights):
+    for left, right in zip(lefts, rights, strict=False):
         interleaved.extend([left, right])
     interleaved.extend(lefts[len(rights):])
     interleaved.extend(rights[len(lefts):])
-    return cast(list[int], interleaved)
+    return interleaved
