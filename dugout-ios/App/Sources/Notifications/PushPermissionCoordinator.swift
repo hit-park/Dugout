@@ -84,5 +84,8 @@ extension PushPermissionCoordinator: UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
+        let userInfo = response.notification.request.content.userInfo
+        guard let route = PushRoute(userInfo: userInfo) else { return }
+        await DeepLinkInbox.shared.submit(route)
     }
 }

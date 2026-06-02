@@ -34,6 +34,13 @@ public final class AppRouter {
         self.route = route
     }
 
+    func handlePush(_ route: PushRoute) {
+        selectedTab = .schedule
+        guard let matchId = route.matchId else { return }
+        schedulePath = NavigationPath()
+        schedulePath.append(matchId)
+    }
+
     public func navigateAfterLogin(user: User) {
         if user.isOnboardingComplete {
             route = .main
