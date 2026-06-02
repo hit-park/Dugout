@@ -26,6 +26,7 @@ import org.mockito.kotlin.whenever
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Optional
+import org.mockito.kotlin.eq
 
 @ExtendWith(MockitoExtension::class)
 class RecordServiceTest {
@@ -91,5 +92,35 @@ class RecordServiceTest {
 
         assertEquals(BattingResult.DOUBLE, res.result)
         assertEquals(1, res.rbi)
+    }
+
+    @Test
+    fun `타격 집계 산식 검증`() {
+        val team = sampleTeam()
+        val match = sampleMatch(team)
+        val user = sampleUser("선수")
+        val member = sampleMember(team, user)
+
+        // teamId(0L)에 대해 활성 멤버 1명 반환, 요청자(99L)는 팀 멤버로 인증
+        whenever(teamMemberRepository.findByTeamIdAndIsActiveTrue(team.id)).thenReturn(listOf(member))
+        whenever(teamMemberRepository.existsByTeamIdAndUserIdAndIsActiveTrue(team.id, 99L)).thenReturn(true)
+
+        // member.id == 0L (BaseEntity 기본값) — 실제 PlateAppearance 객체 4개 생성
+        val pas = listOf(
+            PlateAppearance(match = match, teamMember = member, result = BattingResult.SINGLE),
+            PlateAppearance(match = match, teamMember = member, result = BattingResult.DOUBLE),
+            PlateAppearance(match = match, teamMember = member, result = BattingResult.WALK),
+            PlateAppearance(match = match, teamMember = member, result = BattingResult.STRIKEOUT),
+        )
+        whenever(plateAppearanceRepository.findByTeamMemberIdIn(eq(listOf(member.id)))).thenReturn(pas)
+
+        val stats = service.battingStats(userId = 99L, teamId = team.id).single()
+
+        assertEquals(4, stats.plateAppearances)   // PA = 4
+        assertEquals(3, stats.atBats)             // AB = 4 - 1(BB) = 3
+        assertEquals(2, stats.hits)               // H = 1B + 2B = 2
+        assertEquals(0.667, stats.avg, 0.001)     // AVG = 2/3
+        assertEquals(0.750, stats.obp, 0.001)     // OBP = (2+1)/(3+1)
+        assertEquals(1.000, stats.slg, 0.001)     // SLG = (1+2)/3
     }
 }
