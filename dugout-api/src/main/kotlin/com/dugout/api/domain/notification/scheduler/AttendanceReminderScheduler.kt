@@ -8,6 +8,7 @@ import com.dugout.api.domain.match.entity.Match
 import com.dugout.api.domain.match.entity.MatchStatus
 import com.dugout.api.domain.match.repository.MatchRepository
 import com.dugout.api.domain.notification.event.NotificationType
+import com.dugout.api.domain.notification.repository.NotificationPreferenceRepository
 import com.dugout.api.domain.notification.service.TokenCleanupService
 import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.global.fcm.FcmClient
@@ -29,6 +30,7 @@ class AttendanceReminderScheduler(
     private val reminderLogRepository: AttendanceReminderLogRepository,
     private val fcmClient: FcmClient,
     private val tokenCleanupService: TokenCleanupService,
+    private val preferenceRepository: NotificationPreferenceRepository,
 ) {
     private val log = LoggerFactory.getLogger(AttendanceReminderScheduler::class.java)
 
@@ -70,7 +72,16 @@ class AttendanceReminderScheduler(
                 !reminderLogRepository.existsByMatchIdAndUserIdAndReminderWindow(match.id, it.id, window)
             }
 
-        val targets = nonResponders.filter { it.fcmToken != null }
+        val nowTime = LocalDateTime.now(SEOUL_ZONE).toLocalTime()
+        val prefs = preferenceRepository.findByUserIdIn(nonResponders.map { it.id })
+            .associateBy { it.userId }
+        val targets = nonResponders.filter { user ->
+            if (user.fcmToken == null) return@filter false
+            val pref = prefs[user.id] ?: return@filter true // row 없으면 기본 on
+            if (!pref.attendanceReminder) return@filter false
+            // DnD 구간이면 이번엔 skip → 로그 미기록 → DnD 종료 후 정시에 재시도
+            !pref.isWithinDnd(nowTime)
+        }
         if (targets.isEmpty()) return
 
         val payload = FcmMessage(

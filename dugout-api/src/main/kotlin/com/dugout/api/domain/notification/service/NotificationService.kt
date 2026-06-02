@@ -8,8 +8,10 @@ import com.dugout.api.domain.notification.event.AttendanceChangedEvent
 import com.dugout.api.domain.notification.event.LineupConfirmedEvent
 import com.dugout.api.domain.notification.event.MatchCreatedEvent
 import com.dugout.api.domain.notification.event.NotificationType
+import com.dugout.api.domain.notification.repository.NotificationPreferenceRepository
 import com.dugout.api.domain.team.entity.TeamRole
 import com.dugout.api.domain.team.repository.TeamMemberRepository
+import com.dugout.api.domain.user.entity.User
 import com.dugout.api.domain.user.repository.UserRepository
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
@@ -30,6 +32,7 @@ class NotificationService(
     private val teamMemberRepository: TeamMemberRepository,
     private val fcmClient: FcmClient,
     private val tokenCleanupService: TokenCleanupService,
+    private val preferenceRepository: NotificationPreferenceRepository,
 ) {
     @Transactional
     fun updateFcmToken(userId: Long, token: String?) {
@@ -47,9 +50,10 @@ class NotificationService(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onLineupConfirmed(event: LineupConfirmedEvent) {
         val members = teamMemberRepository.findByTeamIdAndIsActiveTrue(event.teamId)
-        val targetUsers = members
+        val candidates = members
             .map { it.user }
             .filter { it.id != event.confirmedBy }
+        val targetUsers = filterByPreference(candidates, NotificationType.LINEUP_CONFIRMED)
         val tokens = targetUsers.mapNotNull { it.fcmToken }
         if (tokens.isEmpty()) return
 
@@ -63,7 +67,8 @@ class NotificationService(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onMatchCreated(event: MatchCreatedEvent) {
         val members = teamMemberRepository.findByTeamIdAndIsActiveTrue(event.teamId)
-        val targetUsers = members.map { it.user }.filter { it.id != event.createdBy }
+        val candidates = members.map { it.user }.filter { it.id != event.createdBy }
+        val targetUsers = filterByPreference(candidates, NotificationType.MATCH_CREATED)
         val tokens = targetUsers.mapNotNull { it.fcmToken }
         if (tokens.isEmpty()) return
 
@@ -85,6 +90,7 @@ class NotificationService(
         val captain = teamMemberRepository.findByTeamIdAndIsActiveTrue(event.teamId)
             .firstOrNull { it.role == TeamRole.CAPTAIN } ?: return
         if (captain.user.id == event.actorUserId) return
+        if (filterByPreference(listOf(captain.user), NotificationType.ATTENDANCE_CHANGED).isEmpty()) return
         val token = captain.user.fcmToken ?: return
 
         val actor = userRepository.findById(event.actorUserId).orElse(null) ?: return
@@ -156,5 +162,13 @@ class NotificationService(
         AttendanceStatus.MAYBE -> "미정"
         AttendanceStatus.LATE -> "늦참"
         AttendanceStatus.EARLY_LEAVE -> "조퇴"
+    }
+
+    private fun filterByPreference(users: List<User>, type: NotificationType): List<User> {
+        if (users.isEmpty()) return users
+        val prefs = preferenceRepository.findByUserIdIn(users.map { it.id })
+            .associateBy { it.userId }
+        // row 없으면 기본 on (opt-out 모델)
+        return users.filter { user -> prefs[user.id]?.isEnabled(type) ?: true }
     }
 }
