@@ -156,7 +156,7 @@ attendance_reminder_log
 - 신규 유저는 row 없을 수 있음 → **조회 시 없으면 기본값 객체로 취급**(lazy 생성 or 기본값 fallback).
 - API:
   - `GET /api/v1/users/me/notification-preferences` → 현재 설정(없으면 기본값)
-  - `PUT /api/v1/users/me/notification-preferences` → 전체 갱신(upsert)
+  - `PATCH /api/v1/users/me/notification-preferences` → 부분 갱신 (Request DTO 모든 필드 nullable, 누락 필드는 보존). iOS 는 현재 항상 full DTO 를 보내 effective overwrite 동작.
   - 새 ErrorCode 필요시 추가(기존 `USER_NOT_FOUND` 재사용).
 
 ### 5-2. 발송 경로 gating (모든 listener 공통)
@@ -169,7 +169,7 @@ attendance_reminder_log
 ### 5-3. iOS
 - **`DGToggle` 신규** (DesignSystem에 토글/스위치 컴포넌트 없음 — `DGSegmentedControl` 만 존재). `Core/DesignSystem/Sources/Components/DGToggle.swift`.
 - `NotificationSettingsView`: 유형별 토글 4 + DnD 토글 + 시작/종료 `DatePicker`(.hourAndMinute). MyPage에서 진입.
-- `NotificationPreferenceRepository`(GET/PUT) + `NotificationSettingsViewModel`(`@MainActor final class ... ObservableObject`).
+- `NotificationPreferenceRepository`(GET/PATCH) + `NotificationSettingsViewModel`(`@MainActor final class ... ObservableObject`).
 - DTO → Domain Entity 변환(Codable 직접 노출 금지) — Feature Clean Architecture 규약.
 
 ### 5-4. 에러 처리
