@@ -18,7 +18,11 @@ import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.user.entity.AuthProvider
 import com.dugout.api.domain.user.entity.User
 import com.dugout.api.domain.user.repository.UserRepository
+import com.dugout.api.domain.record.entity.BattingResult
+import com.dugout.api.domain.record.entity.PlateAppearance
+import com.dugout.api.domain.record.repository.PlateAppearanceRepository
 import com.dugout.api.global.ai.AiLineupAssignment
+import com.dugout.api.global.ai.AiLineupRecommendRequest
 import com.dugout.api.global.ai.AiLineupRecommendResponse
 import com.dugout.api.global.ai.DugoutAiClient
 import com.dugout.api.global.error.BusinessException
@@ -32,6 +36,8 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.context.ApplicationEventPublisher
 import java.time.LocalDate
@@ -49,6 +55,7 @@ class LineupServiceTest {
     @Mock lateinit var teamMemberRepository: TeamMemberRepository
     @Mock lateinit var dugoutAiClient: DugoutAiClient
     @Mock lateinit var applicationEventPublisher: ApplicationEventPublisher
+    @Mock lateinit var plateAppearanceRepository: PlateAppearanceRepository
 
     private lateinit var service: LineupService
 
@@ -57,7 +64,7 @@ class LineupServiceTest {
         service = LineupService(
             lineupRepository, lineupEntryRepository, matchRepository,
             attendanceRepository, userRepository, teamMemberRepository, dugoutAiClient,
-            applicationEventPublisher,
+            applicationEventPublisher, plateAppearanceRepository,
         )
     }
 
@@ -221,5 +228,48 @@ class LineupServiceTest {
 
         assertEquals(true, response.isConfirmed)
         assertEquals(true, lineup.isConfirmed)
+    }
+
+    @Test
+    fun `recommend는 출석자의 타석 기록을 집계해 AI 요청에 싣는다`() {
+        val team = sampleTeam()
+        val match = sampleMatch(team)
+        // 10명 출석자 생성 (recommend 최소 조건 충족)
+        val attendees = (1..10).map {
+            Attendance.create(match, user("p$it"), AttendanceStatus.ATTEND)
+        }
+        // 첫 번째 출석자(user_id가 첫 번째 user)에 대응하는 TeamMember(id=201)
+        val firstUser = attendees.first().user
+        val teamMember201 = mock<TeamMember>()
+        whenever(teamMember201.id).thenReturn(201L)
+
+        whenever(matchRepository.findById(match.id)).thenReturn(Optional.of(match))
+        whenever(teamMemberRepository.existsByTeamIdAndUserIdAndIsActiveTrue(team.id, 1L)).thenReturn(true)
+        whenever(attendanceRepository.findByMatchIdOrderByRespondedAtAsc(match.id)).thenReturn(attendees)
+        whenever(teamMemberRepository.findByTeamIdAndUserId(team.id, firstUser.id))
+            .thenReturn(teamMember201)
+        val pa1 = mock<PlateAppearance>()
+        val pa2 = mock<PlateAppearance>()
+        whenever(pa1.teamMember).thenReturn(teamMember201)
+        whenever(pa1.result).thenReturn(BattingResult.SINGLE)
+        whenever(pa2.teamMember).thenReturn(teamMember201)
+        whenever(pa2.result).thenReturn(BattingResult.SINGLE)
+        whenever(plateAppearanceRepository.findByTeamMemberIdIn(any())).thenReturn(listOf(pa1, pa2))
+        val captor = argumentCaptor<AiLineupRecommendRequest>()
+        whenever(dugoutAiClient.recommendLineup(captor.capture())).thenReturn(
+            AiLineupRecommendResponse(
+                matchId = match.id,
+                isAiGenerated = true,
+                source = "AI",
+                entries = listOf(
+                    AiLineupAssignment(userId = firstUser.id, position = "P", battingOrder = 1, isBench = false),
+                ),
+            ),
+        )
+
+        service.recommend(userId = 1L, matchId = match.id)
+
+        val profile = captor.firstValue.attendees.first { it.userId == firstUser.id }
+        assertEquals(2, profile.singles)
     }
 }

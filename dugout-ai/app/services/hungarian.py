@@ -10,10 +10,8 @@
 4. 9명 초과는 DH 또는 벤치 (is_bench=True)
 """
 
-from typing import cast
-
 import numpy as np
-from scipy.optimize import linear_sum_assignment
+from scipy.optimize import linear_sum_assignment  # type: ignore[import-untyped]
 
 from app.core.errors import AIException
 from app.schemas.lineup import (
@@ -22,6 +20,7 @@ from app.schemas.lineup import (
     LineupRecommendRequest,
     LineupRecommendResponse,
 )
+from app.services import batting_order as batting_engine
 
 FIELD_POSITIONS: list[str] = ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"]
 
@@ -40,19 +39,26 @@ def recommend(req: LineupRecommendRequest) -> LineupRecommendResponse:
     entries: list[LineupAssignment] = []
     starters_sorted_by_position = [(pos, starters_indices[pos]) for pos in FIELD_POSITIONS]
 
-    # 타순: 좌타/우타 교차 (단순화 — 좌타 우선 1번, 그 다음부터 교차)
+    # 타순: 기록 있으면 세이버매트릭스(The Book lite), 없으면 좌우타 교차 폴백
     starter_users = [req.attendees[idx] for _, idx in starters_sorted_by_position]
-    batting_order = _interleave_batting_order(starter_users)
+    sabermetric_order = batting_engine.order(starter_users)
+    reason_of: dict[int, str] | None = batting_engine.reasons(starter_users)
+
+    if sabermetric_order is None:
+        fallback_list = _interleave_batting_order(starter_users)
+        order_of: dict[int, int] = {uid: fallback_list.index(uid) + 1 for uid in fallback_list}
+    else:
+        order_of = sabermetric_order
 
     for pos, idx in starters_sorted_by_position:
         attendee = req.attendees[idx]
-        order = batting_order.index(attendee.user_id) + 1
         entries.append(
             LineupAssignment(
                 user_id=attendee.user_id,
                 position=pos,
-                batting_order=order,
+                batting_order=order_of[attendee.user_id],
                 is_bench=False,
+                reason=reason_of[attendee.user_id] if reason_of is not None else None,
             )
         )
 
@@ -114,8 +120,8 @@ def _interleave_batting_order(starters: list[AttendeeProfile]) -> list[int]:
     rights = [s.user_id for s in starters if not s.bats_left]
 
     interleaved: list[int] = []
-    for left, right in zip(lefts, rights):
+    for left, right in zip(lefts, rights, strict=False):
         interleaved.extend([left, right])
     interleaved.extend(lefts[len(rights):])
     interleaved.extend(rights[len(lefts):])
-    return cast(list[int], interleaved)
+    return interleaved

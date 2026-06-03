@@ -25,6 +25,11 @@ description: Use when naming new identifiers (classes, fields, files, packages, 
 | 부수 | `Division` | 실력 등급 (1부~4부) |
 | 레이팅 | `Rating` | ELO 점수 |
 | 사용자 | `User` | 인증 주체 |
+| 기록 | `Record` | 타석 단위 경기 기록 (도메인 패키지) |
+| 타석 | `PlateAppearance` | 한 선수의 한 타석 결과 (엔티티) — 타격 결과는 `BattingResult` enum |
+| 출루율 | `OBP` | 세이버매트릭스 지표 약어 (onBaseRate ❌) |
+| 장타율 | `SLG` | 세이버매트릭스 지표 약어 (sluggingPercentage ❌) |
+| 순장타율 | `ISO` | 세이버매트릭스 지표 약어 |
 
 ## 2. 포지션 코드 (영문 약어만)
 
@@ -49,6 +54,8 @@ description: Use when naming new identifiers (classes, fields, files, packages, 
 | `Pitcher`, `Catcher` (필드명) | `P`, `C` (enum 값) | 포지션은 표준 약어 |
 | `KakaoTalkAlim`, `Alimtalk` | `KakaoAlimtalk` | 카카오 알림톡 공식 영문 표기 |
 | `Foreigner`, `Guest` | `Mercenary` | 용병 = `Mercenary` |
+| `AtBat`, `BattingStats`, `Sabermetrics` | `PlateAppearance` (타석), `Record` (도메인) | 타석 기록 = `PlateAppearance` |
+| `onBaseRate`, `sluggingPercentage` | `OBP`, `SLG`, `ISO` | 세이버매트릭스 지표는 표준 약어 |
 
 ---
 

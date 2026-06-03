@@ -21,6 +21,8 @@ data class LineupEntryPayload(
     val battingOrder: Int? = null,
 
     val isBench: Boolean = false,
+
+    val reason: String? = null,
 )
 
 data class SaveLineupRequest(
