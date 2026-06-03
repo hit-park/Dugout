@@ -52,3 +52,20 @@ def test_order_puts_best_overall_at_second_and_power_at_fourth():
 def test_order_returns_none_on_cold_start():
     cold = [_player(i) for i in range(1, 10)]   # 전원 기록 0
     assert batting_order.order(cold) is None
+
+
+def test_reached_on_error_counts_as_out_not_on_base():
+    # 실책출루는 AB에 포함(아웃 취급), on_base에는 미포함 — 이 기능의 핵심 도메인 결정
+    p = _player(1, reached_on_errors=1)
+    c = batting_order._components(p)
+    assert c.pa == 1
+    assert c.ab == 1            # ROE는 타수에 포함
+    assert c.on_base == 0       # 출루로 치지 않음
+    assert c.hits == 0
+
+
+def test_order_assigns_exactly_nine_slots_1_to_9():
+    starters = [_player(i, singles=10, in_play_outs=10 + i) for i in range(1, 10)]
+    result = batting_order.order(starters)
+    assert result is not None
+    assert sorted(result.values()) == list(range(1, 10))
