@@ -99,6 +99,7 @@ class LineupService(
                 position = entry.position,
                 battingOrder = entry.battingOrder,
                 isBench = entry.isBench,
+                reason = entry.reason,
             )
         }
 

@@ -58,6 +58,7 @@ data class AiLineupAssignment(
     val position: String,
     val battingOrder: Int? = null,
     val isBench: Boolean = false,
+    val reason: String? = null,
 )
 
 data class AiLineupRecommendResponse(
