@@ -1,5 +1,10 @@
+from fastapi.testclient import TestClient
+
+from app.main import app
 from app.schemas.lineup import AttendeeProfile
 from app.services import batting_order
+
+_client = TestClient(app)
 
 
 def _player(uid: int, **counts) -> AttendeeProfile:
@@ -69,3 +74,29 @@ def test_order_assigns_exactly_nine_slots_1_to_9():
     result = batting_order.order(starters)
     assert result is not None
     assert sorted(result.values()) == list(range(1, 10))
+
+
+def test_recommend_uses_sabermetric_order_when_records_present():
+    positions = ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"]
+    attendees = [
+        {
+            "user_id": i + 1,
+            "primary_position": positions[i],
+            "sub_positions": [],
+            "bench_ratio_recent": 0.0,
+            "bats_left": False,
+            "singles": 10,
+            "in_play_outs": 40,
+        }
+        for i in range(9)
+    ]
+    # user_id 1을 종합 최고타자로 (고OBP + 고ISO)
+    attendees[0].update({"singles": 40, "doubles": 20, "home_runs": 20, "walks": 40, "in_play_outs": 0})
+
+    res = _client.post(
+        "/api/lineups/recommend",
+        json={"match_id": 1, "attendees": attendees, "lineup_mode": "COMPETITIVE"},
+    )
+    assert res.status_code == 200
+    entries = {e["user_id"]: e["batting_order"] for e in res.json()["entries"] if not e["is_bench"]}
+    assert entries[1] == 2  # 종합 최고타자 → 2번 (The Book 반전)
