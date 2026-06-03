@@ -14,6 +14,9 @@ import com.dugout.api.domain.lineup.repository.LineupRepository
 import com.dugout.api.domain.match.entity.Match
 import com.dugout.api.domain.match.repository.MatchRepository
 import com.dugout.api.domain.notification.event.LineupConfirmedEvent
+import com.dugout.api.domain.record.entity.BattingResult
+import com.dugout.api.domain.record.entity.PlateAppearance
+import com.dugout.api.domain.record.repository.PlateAppearanceRepository
 import com.dugout.api.domain.team.entity.TeamRole
 import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.user.entity.User
@@ -38,6 +41,7 @@ class LineupService(
     private val teamMemberRepository: TeamMemberRepository,
     private val dugoutAiClient: DugoutAiClient,
     private val applicationEventPublisher: ApplicationEventPublisher,
+    private val plateAppearanceRepository: PlateAppearanceRepository,
 ) {
 
     /**
@@ -55,13 +59,34 @@ class LineupService(
             throw BusinessException(ErrorCode.INSUFFICIENT_ATTENDEES)
         }
 
+        val teamId = match.team.id
+        val memberByUser: Map<Long, Long> = attendees.associate { user ->
+            user.id to (teamMemberRepository.findByTeamIdAndUserId(teamId, user.id)?.id ?: -1L)
+        }
+        val memberIds = memberByUser.values.filter { it != -1L }
+        val statsByMember: Map<Long, List<PlateAppearance>> =
+            if (memberIds.isEmpty()) emptyMap()
+            else plateAppearanceRepository.findByTeamMemberIdIn(memberIds).groupBy { it.teamMember.id }
+
         val aiResponse = dugoutAiClient.recommendLineup(
             AiLineupRecommendRequest(
                 matchId = matchId,
                 attendees = attendees.map { user ->
+                    val pas = statsByMember[memberByUser[user.id]] ?: emptyList()
+                    fun n(r: BattingResult) = pas.count { it.result == r }
                     AiAttendeeProfile(
                         userId = user.id,
-                        primaryPosition = "DH",  // 출석자 프로필이 없을 때는 DH로 보내고 AI가 적합도로 재배정
+                        primaryPosition = "DH",
+                        singles = n(BattingResult.SINGLE),
+                        doubles = n(BattingResult.DOUBLE),
+                        triples = n(BattingResult.TRIPLE),
+                        homeRuns = n(BattingResult.HOME_RUN),
+                        walks = n(BattingResult.WALK),
+                        hitByPitch = n(BattingResult.HIT_BY_PITCH),
+                        sacrificeFlies = n(BattingResult.SACRIFICE_FLY),
+                        strikeouts = n(BattingResult.STRIKEOUT),
+                        inPlayOuts = n(BattingResult.IN_PLAY_OUT),
+                        reachedOnErrors = n(BattingResult.REACHED_ON_ERROR),
                     )
                 },
                 lineupMode = match.team.lineupMode.name,
