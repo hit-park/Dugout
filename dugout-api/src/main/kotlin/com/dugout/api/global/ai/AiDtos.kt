@@ -35,6 +35,16 @@ data class AiAttendeeProfile(
     val subPositions: List<String> = emptyList(),
     val benchRatioRecent: Double = 0.0,
     val batsLeft: Boolean = false,
+    val singles: Int = 0,
+    val doubles: Int = 0,
+    val triples: Int = 0,
+    val homeRuns: Int = 0,
+    val walks: Int = 0,
+    val hitByPitch: Int = 0,
+    val sacrificeFlies: Int = 0,
+    val strikeouts: Int = 0,
+    val inPlayOuts: Int = 0,
+    val reachedOnErrors: Int = 0,
 )
 
 data class AiLineupRecommendRequest(
