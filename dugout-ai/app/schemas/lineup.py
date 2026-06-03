@@ -34,6 +34,7 @@ class LineupAssignment(BaseModel):
     position: str
     batting_order: int | None = None
     is_bench: bool = False
+    reason: str | None = None
 
 
 class LineupRecommendResponse(BaseModel):

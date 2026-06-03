@@ -42,6 +42,7 @@ def recommend(req: LineupRecommendRequest) -> LineupRecommendResponse:
     # 타순: 기록 있으면 세이버매트릭스(The Book lite), 없으면 좌우타 교차 폴백
     starter_users = [req.attendees[idx] for _, idx in starters_sorted_by_position]
     sabermetric_order = batting_engine.order(starter_users)
+    reason_of: dict[int, str] | None = batting_engine.reasons(starter_users)
 
     if sabermetric_order is None:
         fallback_list = _interleave_batting_order(starter_users)
@@ -57,6 +58,7 @@ def recommend(req: LineupRecommendRequest) -> LineupRecommendResponse:
                 position=pos,
                 batting_order=order_of[attendee.user_id],
                 is_bench=False,
+                reason=reason_of[attendee.user_id] if reason_of is not None else None,
             )
         )
 

@@ -100,3 +100,101 @@ def test_recommend_uses_sabermetric_order_when_records_present():
     assert res.status_code == 200
     entries = {e["user_id"]: e["batting_order"] for e in res.json()["entries"] if not e["is_bench"]}
     assert entries[1] == 2  # 종합 최고타자 → 2번 (The Book 반전)
+
+
+# ─── reason 문자열 테스트 ────────────────────────────────────────────────────
+
+
+def test_reasons_returns_none_on_cold_start():
+    cold = [_player(i) for i in range(1, 10)]
+    assert batting_order.reasons(cold) is None
+
+
+def test_reasons_slot2_contains_2번():
+    best = _player(1, singles=40, doubles=20, home_runs=20, walks=40)
+    power = _player(2, home_runs=40, strikeouts=60)
+    onbase = _player(3, singles=30, walks=60, in_play_outs=30)
+    fillers = [_player(i, singles=10, in_play_outs=40) for i in range(4, 10)]
+    starters = [best, power, onbase, *fillers]
+
+    result = batting_order.reasons(starters)
+
+    assert result is not None
+    # 종합 최고타자(uid=1)는 2번 배치 → reason에 "2번" 포함
+    assert result[1] is not None
+    assert "2번" in result[1]
+
+
+def test_reasons_all_starters_have_reason_when_records_present():
+    starters = [_player(i, singles=10, in_play_outs=10 + i) for i in range(1, 10)]
+    result = batting_order.reasons(starters)
+    assert result is not None
+    assert len(result) == 9
+    for _uid, reason in result.items():
+        assert reason is not None and len(reason) > 0
+
+
+def test_reasons_format_uses_baseball_notation():
+    # 소수점 3자리, 정수부 0 제거 포맷 검증 (.xxx 형태)
+    starters = [_player(i, singles=10, in_play_outs=10 + i) for i in range(1, 10)]
+    result = batting_order.reasons(starters)
+    assert result is not None
+    for reason in result.values():
+        # 출루율·ISO 포함 슬롯의 포맷 검증: .<3 digits> 패턴이 있거나 순수 텍스트 슬롯(3번, 5번)이어야 함
+        if "출루율" in reason or "ISO" in reason or "출루 ." in reason:
+            import re
+            assert re.search(r"\.\d{3}", reason), f"baseball notation missing in: {reason}"
+
+
+def test_reasons_via_recommend_endpoint_slot2_has_reason():
+    """라우터 통합: 기록 있는 선수의 2번 슬롯 entry에 reason이 non-None이고 '2번' 포함."""
+    positions = ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"]
+    attendees = [
+        {
+            "user_id": i + 1,
+            "primary_position": positions[i],
+            "sub_positions": [],
+            "bench_ratio_recent": 0.0,
+            "bats_left": False,
+            "singles": 10,
+            "in_play_outs": 40,
+        }
+        for i in range(9)
+    ]
+    # user_id 1을 종합 최고타자로
+    attendees[0].update({"singles": 40, "doubles": 20, "home_runs": 20, "walks": 40, "in_play_outs": 0})
+
+    res = _client.post(
+        "/api/lineups/recommend",
+        json={"match_id": 2, "attendees": attendees, "lineup_mode": "BALANCED"},
+    )
+    assert res.status_code == 200
+    entries = res.json()["entries"]
+    slot2_entry = next(e for e in entries if e["batting_order"] == 2)
+    assert slot2_entry["reason"] is not None
+    assert "2번" in slot2_entry["reason"]
+
+
+def test_cold_start_entries_have_no_reason():
+    """기록 없는 선수 라인업은 모든 선발 entry의 reason이 None."""
+    positions = ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"]
+    attendees = [
+        {
+            "user_id": i + 1,
+            "primary_position": positions[i],
+            "sub_positions": [],
+            "bench_ratio_recent": 0.0,
+            "bats_left": i % 2 == 0,
+            # 타석 기록 없음 → 콜드 스타트
+        }
+        for i in range(9)
+    ]
+
+    res = _client.post(
+        "/api/lineups/recommend",
+        json={"match_id": 3, "attendees": attendees, "lineup_mode": "BALANCED"},
+    )
+    assert res.status_code == 200
+    starters = [e for e in res.json()["entries"] if not e["is_bench"]]
+    for entry in starters:
+        assert entry["reason"] is None

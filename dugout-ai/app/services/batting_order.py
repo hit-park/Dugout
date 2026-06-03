@@ -64,6 +64,11 @@ def _adjusted(a: AttendeeProfile, team_obp: float, team_iso: float) -> tuple[flo
     return adj_obp, adj_iso
 
 
+def _format_avg(x: float) -> str:
+    """야구 표기법: 소수점 3자리, 정수부 0 제거 (e.g. 0.420 → '.420')."""
+    return f"{x:.3f}"[1:]  # '0.420' → '.420'
+
+
 def order(starters: list[AttendeeProfile]) -> dict[int, int] | None:
     """선발 9명의 타순(user_id -> 1..9)을 반환. 기록 없으면 None(폴백 신호)."""
     if not has_records(starters):
@@ -103,3 +108,35 @@ def order(starters: list[AttendeeProfile]) -> dict[int, int] | None:
         slot_of[uid] = 6 + i        # 6~9번: adj_OBP 내림차순
 
     return slot_of
+
+
+def reasons(starters: list[AttendeeProfile]) -> dict[int, str] | None:
+    """선발 9명의 타순 이유 문자열(user_id -> 설명)을 반환. 기록 없으면 None.
+
+    order()와 동일한 로직으로 adj_obp/adj_iso를 계산하고 각 슬롯에 맞는 이유 문자열 생성.
+    """
+    slot_of = order(starters)
+    if slot_of is None:
+        return None
+
+    team_obp, team_iso = _team_averages(starters)
+    adj = {s.user_id: _adjusted(s, team_obp, team_iso) for s in starters}
+
+    result: dict[int, str] = {}
+    for uid, slot in slot_of.items():
+        obp, iso = adj[uid]
+        obp_str = _format_avg(obp)
+        iso_str = _format_avg(iso)
+        if slot == 1:
+            result[uid] = f"출루율 {obp_str}로 1번(테이블세터) 배치"
+        elif slot == 2:
+            result[uid] = f"종합 최고타자로 2번 배치 (출루 {obp_str}/순장타 {iso_str})"
+        elif slot == 3:
+            result[uid] = "종합 상위 타자로 3번 배치"
+        elif slot == 4:
+            result[uid] = f"장타력(ISO {iso_str})으로 4번 배치"
+        elif slot == 5:
+            result[uid] = "장타력으로 5번 배치"
+        else:
+            result[uid] = f"출루율 {obp_str}로 {slot}번 배치"
+    return result
