@@ -7,6 +7,7 @@ import DugoutDesignSystem
 
 struct ScheduleTabHost: View {
     @Bindable var authViewModel: AuthViewModel
+    @Bindable var router: AppRouter
     @State private var teams: [MyTeam]?
     @State private var errorMessage: String?
     private let repository: any HomeRepository = HomeRepositoryImpl()
@@ -20,7 +21,7 @@ struct ScheduleTabHost: View {
             } else if let teams {
                 if let firstTeam = teams.first,
                    let currentUserId = authViewModel.currentUser?.id {
-                    NavigationStack {
+                    NavigationStack(path: $router.schedulePath) {
                         MatchListView(
                             teamId: firstTeam.teamId,
                             isManager: firstTeam.role == .captain || firstTeam.role == .manager,

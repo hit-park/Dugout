@@ -437,6 +437,34 @@ CREATE TABLE attendance_patterns (
     UNIQUE (user_id, team_id, day_of_week)
 );
 
+-- 출석 리마인드 발송 이력 (Phase 3-D-3, 48h/24h cron per-user 멱등성)
+CREATE TABLE attendance_reminder_logs (
+    id              BIGSERIAL PRIMARY KEY,
+    match_id        BIGINT NOT NULL,
+    user_id         BIGINT NOT NULL,
+    reminder_window VARCHAR(10) NOT NULL,       -- H48, H24
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_reminder UNIQUE (match_id, user_id, reminder_window)
+);
+
+-- ============================================
+-- 알림 설정 (Phase 3-D-4)
+-- ============================================
+CREATE TABLE notification_preferences (
+    id                   BIGSERIAL PRIMARY KEY,
+    user_id              BIGINT NOT NULL UNIQUE,
+    match_created        BOOLEAN NOT NULL DEFAULT TRUE,
+    lineup_confirmed     BOOLEAN NOT NULL DEFAULT TRUE,
+    attendance_reminder  BOOLEAN NOT NULL DEFAULT TRUE,
+    attendance_changed   BOOLEAN NOT NULL DEFAULT TRUE,
+    dnd_enabled          BOOLEAN NOT NULL DEFAULT TRUE,
+    dnd_start            TIME NOT NULL DEFAULT '22:00',
+    dnd_end              TIME NOT NULL DEFAULT '08:00',
+    created_at           TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 -- ============================================
 -- 라인업
 -- ============================================
@@ -974,22 +1002,63 @@ Phase 3-C 에서 도입. 카카오 알림톡은 발송당 과금 비용 + 비즈
 
 ### 4-2. 이벤트 기반 발송 플로우
 
-Phase 3-C 범위는 **라인업 확정 broadcast 1종**. 다른 알림(매치 등록, 출석 리마인드 cron, 알림 설정 UI)은 후속 Phase.
+Phase 3-D 에서 4종 알림 + cron 으로 확장. 모든 listener 는 `@TransactionalEventListener(AFTER_COMMIT)` + `@Transactional(REQUIRES_NEW)` 패턴으로 발행 트랜잭션 종료 후 새 트랜잭션을 열어 LAZY 연관 접근 안전성 확보. `domain/notification/event/NotificationType` enum 이 발송 분기 / iOS deeplink 라우팅 키 / 설정 토글 키를 단일화한다.
 
 ```
-LineupController.confirmLineup
-  └─ LineupService.confirmLineup() [@Transactional]
-       ├─ Lineup.isConfirmed = true
-       └─ publishEvent(LineupConfirmedEvent)
-                            ↓ AFTER_COMMIT
-NotificationService.onLineupConfirmed [@TransactionalEventListener]
-  ├─ teamMemberRepository.findByTeamIdAndIsActiveTrue
-  ├─ tokens = members.filter(주장 제외).mapNotNull(fcmToken)
-  ├─ fcmClient.sendToTokens(tokens, payload)
-  └─ invalidTokens → TokenCleanupService.clearInvalidTokens (REQUIRES_NEW)
+LineupController.confirmLineup        MatchController.createMatch       AttendanceController.updateVote
+  └─ LineupService [@Transactional]    └─ MatchService [@Transactional]   └─ AttendanceService [@Transactional]
+       └─ publishEvent(                       └─ publishEvent(                  └─ previous capture
+            LineupConfirmedEvent)                 MatchCreatedEvent)               + publishEvent(
+                                                                                     AttendanceChangedEvent)
+                          ↓ AFTER_COMMIT                ↓ AFTER_COMMIT                       ↓ AFTER_COMMIT
+NotificationService.onLineupConfirmed         onMatchCreated                  onAttendanceChanged
+  [@Transactional(REQUIRES_NEW)]                [@Transactional(REQUIRES_NEW)]    [@Transactional(REQUIRES_NEW)]
+  ├─ team active members - confirmedBy          ├─ team active members            ├─ isMeaningfulAttendanceChange?
+  ├─ filterByPreference(LINEUP_CONFIRMED)       │     - createdBy                 ├─ TeamRole.CAPTAIN 단일 수신
+  ├─ fcmClient.sendToTokens                     ├─ filterByPreference             ├─ filterByPreference
+  └─ tokenCleanupService.clearInvalidTokens     │     (MATCH_CREATED)             │     (ATTENDANCE_CHANGED)
+                                                ├─ fcmClient.sendToTokens         └─ fcmClient.sendToTokens
+                                                └─ tokenCleanupService
 ```
 
-이 패턴이 도메인 의존 역전을 보장한다. `LineupService` 는 `NotificationService` 를 import 하지 않으며, 이벤트만 발행. `LineupConfirmedEvent` 자체는 consumer 인 `domain/notification/event/` 에 배치.
+**출석 리마인드 cron** (`AttendanceReminderScheduler @Component @Scheduled(cron="0 0 * * * *", zone="Asia/Seoul") @Transactional`):
+- 매 정시 KST. 48h / 24h 두 윈도우를 각각 `[now+H, now+H+1)` bucket 으로 후보 매치 조회 (SCHEDULED 상태 + voteDeadline 미경과).
+- 미응답자(`Attendance` row 자체가 없는 active member) 별로 `attendance_reminder_logs` 멱등성 체크 → preference (`attendanceReminder=true` + `!isWithinDnd(seoulNow)`) 통과한 사용자에게만 발송.
+- 성공 발송 사용자만 `markSent` → 다음 정시 중복 방지. DnD skip 사용자는 로그 미기록 → DnD 종료 후 정시에 재시도(연기 동작).
+
+**의미 있는 출석 변경 판정** (`AttendanceStatus.isAvailable` + `isMeaningfulAttendanceChange(previous, new)`):
+- 가용성 경계 (`ATTEND/LATE/EARLY_LEAVE` ↔ `ABSENT/MAYBE`) 가 바뀐 경우만 broadcast. 동일 가용성 내 전환(예: ATTEND ↔ LATE) 은 라인업에 무관하므로 noise 제거.
+
+**도메인 의존 역전**: 발행자(Lineup/Match/Attendance Service) 는 `NotificationService` 를 import 하지 않고 이벤트만 발행. 이벤트 data class 는 consumer 인 `domain/notification/event/` 에 배치하여 의존성 방향 단방향 유지.
+
+### 4-3. 알림 설정 (NotificationPreference)
+
+`notification_preferences` 테이블에 사용자별 유형 4종 토글 + DnD 시간 윈도우를 저장. iOS MyPage → "알림 설정" 화면에서 편집.
+
+| 필드 | 기본값 | 비고 |
+|------|--------|------|
+| `match_created` / `lineup_confirmed` / `attendance_reminder` / `attendance_changed` | 모두 `true` | opt-out 모델 |
+| `dnd_enabled` | `true` | 기본 활성 |
+| `dnd_start` / `dnd_end` | `22:00` / `08:00` | 자정 넘김 지원 |
+
+**API**:
+- `GET /api/v1/users/me/notification-preferences` — 현재 설정 반환, row 없으면 default 객체로 lazy-create.
+- `PATCH /api/v1/users/me/notification-preferences` — Request DTO 의 모든 필드 nullable, 누락 필드는 보존. iOS 는 현재 항상 full DTO 를 보내 effective overwrite 동작.
+
+**발송 경로 gating**:
+- 모든 listener 에서 token 수집 전 `filterByPreference(users, type)` 헬퍼 호출 → 유형 토글 off 사용자 제외. `findByUserIdIn(ids)` 한 번으로 배치 조회.
+- **DnD 는 `ATTENDANCE_REMINDER` 에만 적용** — `AttendanceReminderScheduler` 가 `seoulNow.toLocalTime()` 으로 `isWithinDnd` 판정 후 skip. 즉시성 3종(라인업 확정 / 매치 등록 / 출석 변경) 은 DnD 무시.
+
+**DnD 구간 판정** (`NotificationPreference.isWithinDnd(at: LocalTime): Boolean`):
+- `dndEnabled=false` → 항상 false.
+- `start <= end` (예: 13:00-14:00) → `[start, end)` (end 미포함).
+- `start > end` (자정 넘김, 예: 22:00-08:00) → `at >= start || at < end`.
+
+### 4-4. iOS Deeplink 라우팅
+
+푸시 탭 → 해당 경기 상세로 착지. `actor PushPermissionCoordinator` 가 `nonisolated didReceive` 에서 `PushRoute(userInfo:)` 파싱 후 `await DeepLinkInbox.shared.submit(route)`. `MainTabView` 가 `.onChange(of: inbox.pending)` (foreground) + `.task` (cold-start) 로 소비하여 `router.handlePush(route)` 호출 → `selectedTab = .schedule` + `schedulePath = NavigationPath([matchId])`.
+
+`MatchListView` 의 `navigationDestination(for: Int64.self)` 가 이미 라우팅을 처리하므로 deeplink 는 새 destination 등록 없이 기존 경로 재사용.
 
 ---
 

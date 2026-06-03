@@ -82,6 +82,22 @@ struct MyPageView: View {
             }
             .padding(.horizontal, DGSpacing.lg)
 
+            NavigationLink {
+                NotificationSettingsView()
+            } label: {
+                DGCard {
+                    HStack {
+                        Text("알림 설정")
+                            .foregroundStyle(DGColor.textPrimary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(DGColor.textSecondary)
+                    }
+                    .padding(DGSpacing.sm)
+                }
+            }
+            .padding(.horizontal, DGSpacing.lg)
+
             Spacer()
 
             DGButton("로그아웃") {

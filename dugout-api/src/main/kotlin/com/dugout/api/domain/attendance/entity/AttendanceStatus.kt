@@ -15,3 +15,13 @@ enum class AttendanceStatus {
     LATE,
     EARLY_LEAVE,
 }
+
+val AttendanceStatus.isAvailable: Boolean
+    get() = this == AttendanceStatus.ATTEND ||
+        this == AttendanceStatus.LATE ||
+        this == AttendanceStatus.EARLY_LEAVE
+
+fun isMeaningfulAttendanceChange(
+    previous: AttendanceStatus,
+    new: AttendanceStatus,
+): Boolean = previous.isAvailable != new.isAvailable

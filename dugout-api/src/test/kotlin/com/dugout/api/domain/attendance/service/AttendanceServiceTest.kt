@@ -24,6 +24,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
+import org.springframework.context.ApplicationEventPublisher
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -36,6 +37,7 @@ class AttendanceServiceTest {
     @Mock lateinit var matchRepository: MatchRepository
     @Mock lateinit var userRepository: UserRepository
     @Mock lateinit var teamMemberRepository: TeamMemberRepository
+    @Mock lateinit var eventPublisher: ApplicationEventPublisher
 
     private lateinit var attendanceService: AttendanceService
 
@@ -46,6 +48,7 @@ class AttendanceServiceTest {
             matchRepository,
             userRepository,
             teamMemberRepository,
+            eventPublisher,
         )
     }
 

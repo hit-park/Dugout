@@ -13,6 +13,7 @@ import DugoutHomeFeature
 struct MainTabView: View {
     @Bindable var authViewModel: AuthViewModel
     @Bindable var router: AppRouter
+    @State private var inbox = DeepLinkInbox.shared
 
     private let tabs: [DGTabItem<AppTab>] = [
         .init(id: .home, title: "홈", systemImage: "house.fill"),
@@ -30,6 +31,15 @@ struct MainTabView: View {
         }
         .ignoresSafeArea(.keyboard)
         .background(DGColor.c100)
+        .onChange(of: inbox.pending) { _, route in
+            if let route {
+                router.handlePush(route)
+                inbox.pending = nil
+            }
+        }
+        .task {
+            if let route = inbox.consume() { router.handlePush(route) }
+        }
     }
 
     @ViewBuilder
@@ -38,7 +48,7 @@ struct MainTabView: View {
         case .home:
             HomeView(authViewModel: authViewModel)
         case .schedule:
-            ScheduleTabHost(authViewModel: authViewModel)
+            ScheduleTabHost(authViewModel: authViewModel, router: router)
         case .matching:
             placeholder(title: "매칭", message: "팀·용병 매칭 기능을 준비 중이에요")
         case .team:

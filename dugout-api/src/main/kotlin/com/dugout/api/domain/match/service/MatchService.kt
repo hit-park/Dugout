@@ -6,11 +6,13 @@ import com.dugout.api.domain.match.dto.UpdateMatchRequest
 import com.dugout.api.domain.match.entity.Match
 import com.dugout.api.domain.match.entity.MatchStatus
 import com.dugout.api.domain.match.repository.MatchRepository
+import com.dugout.api.domain.notification.event.MatchCreatedEvent
 import com.dugout.api.domain.team.entity.TeamRole
 import com.dugout.api.domain.team.repository.TeamMemberRepository
 import com.dugout.api.domain.team.repository.TeamRepository
 import com.dugout.api.global.error.BusinessException
 import com.dugout.api.global.error.ErrorCode
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -21,6 +23,7 @@ class MatchService(
     private val matchRepository: MatchRepository,
     private val teamRepository: TeamRepository,
     private val teamMemberRepository: TeamMemberRepository,
+    private val eventPublisher: ApplicationEventPublisher,
 ) {
 
     @Transactional
@@ -43,6 +46,10 @@ class MatchService(
                 voteDeadline = request.voteDeadline,
                 memo = request.memo,
             ),
+        )
+
+        eventPublisher.publishEvent(
+            MatchCreatedEvent(matchId = match.id, teamId = match.team.id, createdBy = userId),
         )
 
         return MatchResponse.from(match)
