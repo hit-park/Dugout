@@ -1,4 +1,5 @@
 from app.schemas.lineup import AttendeeProfile
+from app.tooling.archetypes import OUTCOMES, Archetype, weights
 from app.tooling.statline import PlayerLine, StatLine, to_attendee_profile
 
 
@@ -26,3 +27,18 @@ def test_player_line_holds_label_and_statline():
     pl = PlayerLine(label="박**(61)", statline=StatLine(singles=2))
     assert pl.label == "박**(61)"
     assert pl.statline.singles == 2
+
+
+def test_outcomes_match_statline_fields():
+    line = StatLine()
+    for outcome in OUTCOMES:
+        assert hasattr(line, outcome), f"{outcome} is not a StatLine field"
+    assert len(OUTCOMES) == 10
+
+
+def test_every_archetype_has_weight_for_every_outcome():
+    for archetype in Archetype:
+        w = weights(archetype)
+        assert set(w.keys()) == set(OUTCOMES)
+        assert all(v >= 0 for v in w.values())
+        assert sum(w.values()) > 0
