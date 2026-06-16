@@ -1,4 +1,8 @@
+import pytest
+
 from app.schemas.lineup import AttendeeProfile
+from app.services import batting_order
+from app.tooling import synthetic
 from app.tooling.archetypes import OUTCOMES, Archetype, weights
 from app.tooling.statline import PlayerLine, StatLine, to_attendee_profile
 
@@ -42,3 +46,50 @@ def test_every_archetype_has_weight_for_every_outcome():
         assert set(w.keys()) == set(OUTCOMES)
         assert all(v >= 0 for v in w.values())
         assert sum(w.values()) > 0
+
+
+def test_generate_is_deterministic_for_same_seed():
+    a = synthetic.generate(Archetype.OVERALL, plate_appearances=100, seed=7)
+    b = synthetic.generate(Archetype.OVERALL, plate_appearances=100, seed=7)
+    assert a == b
+
+
+def test_generate_total_outcomes_equals_pa():
+    line = synthetic.generate(Archetype.POWER, plate_appearances=120, seed=3)
+    total = (
+        line.singles + line.doubles + line.triples + line.home_runs
+        + line.walks + line.hit_by_pitch + line.sacrifice_flies
+        + line.strikeouts + line.in_play_outs + line.reached_on_errors
+    )
+    assert total == 120
+
+
+def test_generate_zero_pa_is_empty():
+    assert synthetic.generate(Archetype.AVERAGE, plate_appearances=0, seed=1) == StatLine()
+
+
+def test_generate_negative_pa_raises():
+    with pytest.raises(ValueError):
+        synthetic.generate(Archetype.AVERAGE, plate_appearances=-1, seed=1)
+
+
+def test_archetypes_separate_in_expected_directions_at_large_sample():
+    pa = 2000
+    overall = to_attendee_profile(synthetic.generate(Archetype.OVERALL, plate_appearances=pa, seed=1), user_id=1)
+    onbase = to_attendee_profile(synthetic.generate(Archetype.PURE_ONBASE, plate_appearances=pa, seed=2), user_id=2)
+    power = to_attendee_profile(synthetic.generate(Archetype.POWER, plate_appearances=pa, seed=3), user_id=3)
+    average = to_attendee_profile(synthetic.generate(Archetype.AVERAGE, plate_appearances=pa, seed=4), user_id=4)
+
+    team = [overall, onbase, power, average]
+    team_obp, team_iso = batting_order._team_averages(team)
+    obp: dict[int, float] = {}
+    iso: dict[int, float] = {}
+    for p in team:
+        o, i = batting_order._adjusted(p, team_obp, team_iso)
+        obp[p.user_id] = o
+        iso[p.user_id] = i
+
+    assert obp[2] > obp[3]
+    assert iso[3] > iso[2]
+    overall_score = {uid: obp[uid] + 0.5 * iso[uid] for uid in obp}
+    assert overall_score[1] == max(overall_score.values())
