@@ -3,6 +3,7 @@
 설계: docs/superpowers/specs/2026-06-16-ai-lineup-validation-kit-design.md
 """
 
+from app.schemas.lineup import AttendeeProfile
 from app.services import batting_order
 from app.tooling import synthetic
 from app.tooling.archetypes import Archetype
@@ -11,7 +12,7 @@ from app.tooling.statline import StatLine, to_attendee_profile
 POSITIONS = ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"]
 
 
-def _distinct_archetype_starters(pa: int) -> list:
+def _distinct_archetype_starters(pa: int) -> list[AttendeeProfile]:
     """1=종합, 2=순수출루, 3=거포, 4~9=평범. seed는 uid 고정 → 결정적."""
     specs = [Archetype.OVERALL, Archetype.PURE_ONBASE, Archetype.POWER] + [Archetype.AVERAGE] * 6
     starters = []
@@ -43,30 +44,20 @@ def test_slots_six_to_nine_are_obp_descending():
 
 
 def test_shrinkage_pulls_extreme_player_toward_team_mean_at_small_sample():
-    # 거포 1명을 평범형 8명 사이에 두고 PA 5 vs 200 비교.
-    # 작은 표본일수록 보정 ISO가 팀 평균에 더 가깝다(극단값 불신).
-    def build(power_pa: int) -> list:
-        power = to_attendee_profile(
-            synthetic.generate(Archetype.POWER, plate_appearances=power_pa, seed=42),
-            user_id=1,
-        )
-        average = [
-            to_attendee_profile(
-                synthetic.generate(Archetype.AVERAGE, plate_appearances=200, seed=200 + i),
-                user_id=i,
-            )
-            for i in range(2, 10)
-        ]
-        return [power, *average]
+    # 팀 평균을 고정해 표본 크기 효과만 격리한다.
+    # 같은 seed의 5타석 표본은 200타석 표본의 접두부 → 표본 크기만 다르다.
+    # 작은 표본일수록 보정 ISO가 (동일한) 팀 평균에 더 가깝게 수축된다.
+    fixed_team_obp, fixed_team_iso = 0.320, 0.120
+    small = to_attendee_profile(
+        synthetic.generate(Archetype.POWER, plate_appearances=5, seed=42), user_id=1
+    )
+    large = to_attendee_profile(
+        synthetic.generate(Archetype.POWER, plate_appearances=200, seed=42), user_id=1
+    )
+    _, adj_iso_small = batting_order._adjusted(small, fixed_team_obp, fixed_team_iso)
+    _, adj_iso_large = batting_order._adjusted(large, fixed_team_obp, fixed_team_iso)
 
-    small = build(5)
-    large = build(200)
-    small_obp, small_iso = batting_order._team_averages(small)
-    large_obp, large_iso = batting_order._team_averages(large)
-    _, adj_iso_small = batting_order._adjusted(small[0], small_obp, small_iso)
-    _, adj_iso_large = batting_order._adjusted(large[0], large_obp, large_iso)
-
-    assert abs(adj_iso_small - small_iso) < abs(adj_iso_large - large_iso)
+    assert abs(adj_iso_small - fixed_team_iso) < abs(adj_iso_large - fixed_team_iso)
 
 
 def test_shrinkage_compresses_obp_spread_at_small_sample():
