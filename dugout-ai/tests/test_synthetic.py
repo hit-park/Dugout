@@ -14,17 +14,26 @@ def test_statline_defaults_are_zero():
 
 
 def test_to_attendee_profile_maps_all_counts():
-    line = StatLine(singles=3, doubles=1, walks=2, strikeouts=4, in_play_outs=5)
+    line = StatLine(
+        singles=3, doubles=1, triples=2, home_runs=5,
+        walks=7, hit_by_pitch=1, sacrifice_flies=4,
+        strikeouts=9, in_play_outs=6, reached_on_errors=8,
+    )
     profile = to_attendee_profile(line, user_id=7, primary_position="SS")
     assert isinstance(profile, AttendeeProfile)
     assert profile.user_id == 7
     assert profile.primary_position == "SS"
+    assert profile.sub_positions == []
     assert profile.singles == 3
     assert profile.doubles == 1
-    assert profile.walks == 2
-    assert profile.strikeouts == 4
-    assert profile.in_play_outs == 5
-    assert profile.sub_positions == []
+    assert profile.triples == 2
+    assert profile.home_runs == 5
+    assert profile.walks == 7
+    assert profile.hit_by_pitch == 1
+    assert profile.sacrifice_flies == 4
+    assert profile.strikeouts == 9
+    assert profile.in_play_outs == 6
+    assert profile.reached_on_errors == 8
 
 
 def test_player_line_holds_label_and_statline():

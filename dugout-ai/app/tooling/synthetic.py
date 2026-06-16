@@ -24,15 +24,4 @@ def generate(archetype: Archetype, *, plate_appearances: int, seed: int) -> Stat
     for outcome in draws:
         counts[outcome] += 1
 
-    return StatLine(
-        singles=counts["singles"],
-        doubles=counts["doubles"],
-        triples=counts["triples"],
-        home_runs=counts["home_runs"],
-        walks=counts["walks"],
-        hit_by_pitch=counts["hit_by_pitch"],
-        sacrifice_flies=counts["sacrifice_flies"],
-        strikeouts=counts["strikeouts"],
-        in_play_outs=counts["in_play_outs"],
-        reached_on_errors=counts["reached_on_errors"],
-    )
+    return StatLine(**counts)
