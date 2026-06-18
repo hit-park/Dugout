@@ -1,6 +1,12 @@
 """gameone 크롤러 — 파싱/마스킹은 오프라인 합성 HTML로, 실데이터는 스모크로."""
 
+import pytest
+
+from app.core.errors import AIException
+from app.services import batting_order
+from app.tooling import gameone
 from app.tooling.gameone import mask_name, parse_hitter_rows
+from app.tooling.statline import to_attendee_profile
 
 # 컬럼 순서(gameone 타자 랭킹): 순위0 이름1 타율2 게임수3 타석4 타수5 득점6
 # 총안타7 1루타8 2루타9 3루타10 홈런11 루타12 타점13 도루14 도실15
@@ -60,3 +66,25 @@ def test_parse_skips_short_rows():
 
 def test_parse_empty_table_returns_empty_list():
     assert parse_hitter_rows(_html()) == []
+
+
+def test_fetch_real_club_40837_smoke():
+    """실데이터 무결성 스모크. 네트워크 없으면 skip(품질 아닌 파이프라인 검증)."""
+    try:
+        rows = gameone.fetch_club_hitters(40837)
+    except AIException as e:
+        pytest.skip(f"gameone unavailable: {e.code}")
+
+    assert len(rows) >= 1
+    for pl in rows:
+        assert "**" in pl.label  # 실명이 평문으로 남지 않음
+
+    if len(rows) >= 9:
+        starters = [
+            to_attendee_profile(rows[i].statline, user_id=i + 1, primary_position="DH")
+            for i in range(9)
+        ]
+        slots = batting_order.order(starters)
+        # 기록이 하나라도 있으면 1~9 유일 배정, 전부 0이면 None(콜드스타트) — 둘 다 정상
+        if slots is not None:
+            assert sorted(slots.values()) == list(range(1, 10))
