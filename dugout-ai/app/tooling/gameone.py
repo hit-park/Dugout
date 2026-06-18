@@ -7,7 +7,7 @@ club_idx → 마스킹된 PlayerLine 목록. 실명(PII)은 적재 즉시 마스
 import re
 
 import httpx
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # type: ignore[import-untyped]
 
 from app.core.errors import AIException
 from app.tooling.statline import PlayerLine, StatLine
