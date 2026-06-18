@@ -5,6 +5,7 @@ pydantic-settings==2.7.1
 scipy==1.15.0
 numpy==2.2.1
 httpx==0.28.1
+beautifulsoup4==4.12.3  # gameone 크롤러(HTML 파싱)용
 
 # dev
 pytest==8.3.4
