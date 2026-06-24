@@ -21,9 +21,12 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     setError(null);
+    setData(null);
     recommend(fixture.attendees, mode)
       .then((r) => !cancelled && setData(r))
-      .catch((e: Error) => !cancelled && setError(e.message));
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      });
     return () => {
       cancelled = true;
     };
