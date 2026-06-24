@@ -1,0 +1,144 @@
+{
+  "pa200": {
+    "match_id": 0,
+    "is_ai_generated": true,
+    "source": "AI",
+    "fairness_note": null,
+    "entries": [
+      {
+        "user_id": 1,
+        "position": "P",
+        "batting_order": 2,
+        "is_bench": false,
+        "reason": "종합 최고타자로 2번 배치 (출루 .490/순장타 .332)"
+      },
+      {
+        "user_id": 2,
+        "position": "C",
+        "batting_order": 1,
+        "is_bench": false,
+        "reason": "출루율 .422로 1번(테이블세터) 배치"
+      },
+      {
+        "user_id": 3,
+        "position": "1B",
+        "batting_order": 4,
+        "is_bench": false,
+        "reason": "장타력(ISO .305)으로 4번 배치"
+      },
+      {
+        "user_id": 4,
+        "position": "2B",
+        "batting_order": 3,
+        "is_bench": false,
+        "reason": "종합 상위 타자로 3번 배치"
+      },
+      {
+        "user_id": 5,
+        "position": "3B",
+        "batting_order": 9,
+        "is_bench": false,
+        "reason": "출루율 .274로 9번 배치"
+      },
+      {
+        "user_id": 6,
+        "position": "SS",
+        "batting_order": 5,
+        "is_bench": false,
+        "reason": "장타력으로 5번 배치"
+      },
+      {
+        "user_id": 7,
+        "position": "LF",
+        "batting_order": 6,
+        "is_bench": false,
+        "reason": "출루율 .322로 6번 배치"
+      },
+      {
+        "user_id": 8,
+        "position": "CF",
+        "batting_order": 7,
+        "is_bench": false,
+        "reason": "출루율 .314로 7번 배치"
+      },
+      {
+        "user_id": 9,
+        "position": "RF",
+        "batting_order": 8,
+        "is_bench": false,
+        "reason": "출루율 .294로 8번 배치"
+      }
+    ]
+  },
+  "pa5": {
+    "match_id": 0,
+    "is_ai_generated": true,
+    "source": "AI",
+    "fairness_note": null,
+    "entries": [
+      {
+        "user_id": 1,
+        "position": "P",
+        "batting_order": 2,
+        "is_bench": false,
+        "reason": "종합 최고타자로 2번 배치 (출루 .279/순장타 .116)"
+      },
+      {
+        "user_id": 2,
+        "position": "C",
+        "batting_order": 1,
+        "is_bench": false,
+        "reason": "출루율 .279로 1번(테이블세터) 배치"
+      },
+      {
+        "user_id": 3,
+        "position": "1B",
+        "batting_order": 4,
+        "is_bench": false,
+        "reason": "장타력(ISO .148)으로 4번 배치"
+      },
+      {
+        "user_id": 4,
+        "position": "2B",
+        "batting_order": 6,
+        "is_bench": false,
+        "reason": "출루율 .261로 6번 배치"
+      },
+      {
+        "user_id": 5,
+        "position": "3B",
+        "batting_order": 9,
+        "is_bench": false,
+        "reason": "출루율 .242로 9번 배치"
+      },
+      {
+        "user_id": 6,
+        "position": "SS",
+        "batting_order": 7,
+        "is_bench": false,
+        "reason": "출루율 .261로 7번 배치"
+      },
+      {
+        "user_id": 7,
+        "position": "LF",
+        "batting_order": 8,
+        "is_bench": false,
+        "reason": "출루율 .261로 8번 배치"
+      },
+      {
+        "user_id": 8,
+        "position": "CF",
+        "batting_order": 3,
+        "is_bench": false,
+        "reason": "종합 상위 타자로 3번 배치"
+      },
+      {
+        "user_id": 9,
+        "position": "RF",
+        "batting_order": 5,
+        "is_bench": false,
+        "reason": "장타력으로 5번 배치"
+      }
+    ]
+  }
+}
