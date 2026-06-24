@@ -13,7 +13,6 @@ export function LineupView({
   const batters = response.entries
     .filter((e) => e.batting_order != null)
     .sort((a, b) => (a.batting_order as number) - (b.batting_order as number));
-  const posByUser = new Map(response.entries.map((e) => [e.user_id, e.position]));
   const userByPos = new Map(response.entries.map((e) => [e.position, e.user_id]));
 
   return (
@@ -24,7 +23,7 @@ export function LineupView({
           <li key={e.user_id}>
             <span className="order">{e.batting_order}</span>
             <span className="name">{name(e.user_id)}</span>
-            <span className="pos">{posByUser.get(e.user_id)}</span>
+            <span className="pos">{e.position}</span>
             <span className="reason">{e.reason}</span>
           </li>
         ))}

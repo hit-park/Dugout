@@ -30,7 +30,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [mode, sample, fixture.attendees]);
+  }, [mode, sample]);
 
   return (
     <main>
