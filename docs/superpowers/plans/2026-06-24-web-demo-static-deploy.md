@@ -4,16 +4,16 @@
 
 **Goal:** B의 AI 라인업 웹 데모를 미리 계산한 정적 응답으로 GitHub Pages에 무료 배포한다 (포트폴리오 하위 프로젝트 D).
 
-**Architecture:** 라인업 추천 출력이 결정적이라, (픽스처 2 × 모드 2) = 4개 응답을 기존 엔진으로 미리 계산해 `dugout-web/src/responses.json`에 커밋한다. 프런트는 런타임 fetch 대신 이 JSON을 동기 룩업하고, Vite로 정적 빌드해 GitHub Actions가 Pages에 배포한다.
+**Architecture:** 라인업 추천 출력이 결정적이라, 픽스처 2종의 응답을 기존 엔진으로 미리 계산해 `dugout-web/src/responses.json`에 커밋한다. 프런트는 런타임 fetch 대신 이 JSON을 동기 룩업하고, Vite로 정적 빌드해 GitHub Actions가 Pages에 배포한다. (9명 풀로스터에선 BALANCED/COMPETITIVE 출력이 동일해 모드 토글은 두지 않고 표본 토글만 남긴다.)
 
 **Tech Stack:** Python(기존 FastAPI 엔진 재사용) / Vite + React + TS / GitHub Actions + GitHub Pages.
 
 ## Global Constraints
 
 - 순수 정적 배포. 런타임 백엔드·CORS·fetch 없음. 응답은 미리 계산해 `src/`에 번들 import.
-- `responses.json` 형태: `{ "<sample>_<mode>": LineupResponse }`, 키 4개 (`pa200_BALANCED`, `pa200_COMPETITIVE`, `pa5_BALANCED`, `pa5_COMPETITIVE`).
+- `responses.json` 형태: `{ "<sample>": LineupResponse }`, 키 2개 (`pa200`, `pa5`). `lineup_mode`는 `BALANCED` 고정 — 9명 풀로스터에선 두 모드 출력이 동일하므로 모드 토글을 두지 않는다.
 - 엔진 로직 재구현 **금지** — `app.services.hungarian.recommend(req)` 호출만.
-- `api.ts`의 `recommend()`는 **삭제하지 않는다** (B 포트폴리오 산출물). `LineupResponse`/`Mode`/`AttendeeProfile` 타입은 계속 사용.
+- `api.ts`의 `recommend()`와 `Mode` 타입은 App에서 미사용이 되지만 **삭제하지 않는다** (B 포트폴리오 산출물). `LineupResponse`/`AttendeeProfile` 타입은 계속 사용.
 - Vite `base`는 빌드 시 `/Dugout/` (GitHub Pages 프로젝트 서브경로), dev는 `/`.
 - 배포 워크플로: `push` to `main`, `paths: ['dugout-web/**', '.github/workflows/deploy-web.yml']`, 공식 Pages 액션, 산출물 경로 `dugout-web/dist`.
 - 라우터/Redux/UI 컴포넌트 라이브러리 금지. 단일 페이지.
@@ -49,24 +49,24 @@ REPO = Path(__file__).resolve().parents[2]
 FIXTURES = REPO / "dugout-web" / "src" / "fixtures"
 RESPONSES = REPO / "dugout-web" / "src" / "responses.json"
 SAMPLES = ("pa200", "pa5")
-MODES = ("BALANCED", "COMPETITIVE")
+# 9명 풀로스터에선 BALANCED/COMPETITIVE 출력이 동일 → 모드 토글 없이 BALANCED 고정
+MODE = "BALANCED"
 
 
 def test_committed_responses_match_engine_and_are_valid_lineups():
     committed = json.loads(RESPONSES.read_text(encoding="utf-8"))
-    assert set(committed) == {f"{s}_{m}" for s in SAMPLES for m in MODES}
+    assert set(committed) == set(SAMPLES)
     for sample in SAMPLES:
         fixture = json.loads((FIXTURES / f"{sample}.json").read_text(encoding="utf-8"))
         attendees = [AttendeeProfile(**a) for a in fixture["attendees"]]
-        for mode in MODES:
-            req = LineupRecommendRequest(match_id=0, attendees=attendees, lineup_mode=mode)
-            fresh = hungarian.recommend(req).model_dump()
-            # 커밋된 정적 응답이 엔진 출력과 일치해야 정적 배포가 정당(결정성 + 비-stale)
-            assert committed[f"{sample}_{mode}"] == fresh
-            orders = sorted(
-                e["batting_order"] for e in fresh["entries"] if e["batting_order"] is not None
-            )
-            assert orders == list(range(1, len(orders) + 1))
+        req = LineupRecommendRequest(match_id=0, attendees=attendees, lineup_mode=MODE)
+        fresh = hungarian.recommend(req).model_dump()
+        # 커밋된 정적 응답이 엔진 출력과 일치해야 정적 배포가 정당(결정성 + 비-stale)
+        assert committed[sample] == fresh
+        orders = sorted(
+            e["batting_order"] for e in fresh["entries"] if e["batting_order"] is not None
+        )
+        assert orders == list(range(1, len(orders) + 1))
 ```
 
 - [ ] **Step 2: 테스트 실패 확인**
@@ -94,13 +94,14 @@ from app.services import hungarian
 REPO = Path(__file__).resolve().parents[2]
 FIXTURES_DIR = REPO / "dugout-web" / "src" / "fixtures"
 SAMPLES = ("pa200", "pa5")
-MODES = ("BALANCED", "COMPETITIVE")
+# 9명 풀로스터에선 BALANCED/COMPETITIVE 출력이 동일 → BALANCED 고정
+MODE = "BALANCED"
 
 
-def _response(sample: str, mode: str) -> dict:
+def _response(sample: str) -> dict:
     fixture = json.loads((FIXTURES_DIR / f"{sample}.json").read_text(encoding="utf-8"))
     attendees = [AttendeeProfile(**a) for a in fixture["attendees"]]
-    req = LineupRecommendRequest(match_id=0, attendees=attendees, lineup_mode=mode)
+    req = LineupRecommendRequest(match_id=0, attendees=attendees, lineup_mode=MODE)
     return hungarian.recommend(req).model_dump()
 
 
@@ -109,8 +110,8 @@ def main() -> None:
         out = Path(sys.argv[1])
     else:
         out = REPO / "dugout-web" / "src" / "responses.json"
-    payload = {f"{s}_{m}": _response(s, m) for s in SAMPLES for m in MODES}
-    out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    payload = {s: _response(s) for s in SAMPLES}
+    out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {out}: {len(payload)} responses")
 
 
@@ -125,7 +126,7 @@ Run:
 cd dugout-ai && source .venv/bin/activate
 python -m scripts.dump_web_responses
 ```
-Expected: `wrote .../dugout-web/src/responses.json: 4 responses`.
+Expected: `wrote .../dugout-web/src/responses.json: 2 responses`.
 
 - [ ] **Step 5: 테스트 통과 + 타입 확인**
 
@@ -157,7 +158,7 @@ git commit -m "feat(web): 라인업 응답 4종 미리 계산 + 결정성 검증
 Replace `dugout-web/src/App.tsx` 전체:
 ```tsx
 import { useState } from "react";
-import { type AttendeeProfile, type LineupResponse, type Mode } from "./api";
+import { type AttendeeProfile, type LineupResponse } from "./api";
 import { LineupView } from "./LineupView";
 import pa200 from "./fixtures/pa200.json";
 import pa5 from "./fixtures/pa5.json";
@@ -169,25 +170,17 @@ const FIXTURES: Record<Sample, Fixture> = {
   pa200: pa200 as Fixture,
   pa5: pa5 as Fixture,
 };
-const RESPONSES = responses as Record<string, LineupResponse>;
+const RESPONSES = responses as Record<Sample, LineupResponse>;
 
 export default function App() {
-  const [mode, setMode] = useState<Mode>("BALANCED");
   const [sample, setSample] = useState<Sample>("pa200");
   const fixture = FIXTURES[sample];
-  const response = RESPONSES[`${sample}_${mode}`];
+  const response = RESPONSES[sample];
 
   return (
     <main>
       <h1>AI 라인업 추천 데모</h1>
       <div className="controls">
-        <label>
-          모드{" "}
-          <select value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
-            <option value="BALANCED">BALANCED</option>
-            <option value="COMPETITIVE">COMPETITIVE</option>
-          </select>
-        </label>
         <label>
           표본{" "}
           <select value={sample} onChange={(e) => setSample(e.target.value as Sample)}>
@@ -202,7 +195,7 @@ export default function App() {
 }
 ```
 
-참고: `recommend`는 더 이상 import하지 않는다(`api.ts`엔 그대로 남김 — 미사용 export는 tsc 에러 아님). `useEffect`/로딩/에러 상태는 제거된다(4키가 모든 토글 조합을 덮어 룩업이 항상 성공).
+참고: 모드 토글은 제거한다(9명 풀로스터에선 두 모드 출력이 동일해 no-op). `recommend`·`Mode`는 더 이상 import하지 않는다(`api.ts`엔 그대로 남김 — 미사용 export는 tsc 에러 아님). `useEffect`/로딩/에러 상태도 제거된다(2키가 표본 토글 전 조합을 덮어 룩업이 항상 성공).
 
 - [ ] **Step 2: vite.config.ts에 base 추가**
 
@@ -344,7 +337,8 @@ git commit -m "ci(web): GitHub Pages 배포 워크플로"
 **Spec coverage:**
 - 응답 미리 계산(엔진 재사용, 4키, src 번들) → Task 1. ✓
 - 프런트 fetch 제거 → 동기 룩업 → Task 2 Step 1. ✓
-- api.ts recommend() 잔존, 타입은 계속 사용 → Task 2 Step 1(주석 명시, recommend import 제거하되 파일 미수정). ✓
+- 모드 토글 제거(no-op) → Task 2 Step 1. ✓
+- api.ts recommend()/Mode 잔존, 나머지 타입은 계속 사용 → Task 2 Step 1(주석 명시, import만 제거하되 파일 미수정). ✓
 - Vite base 빌드 시 /Dugout/, dev /  → Task 2 Step 2. ✓
 - GitHub Actions Pages 워크플로(paths 필터, 공식 액션, dist 경로) → Task 3. ✓
 - 에러 경로 없음(정적 룩업 항상 성공) → Task 2에서 에러 상태 제거. ✓
@@ -354,4 +348,4 @@ git commit -m "ci(web): GitHub Pages 배포 워크플로"
 
 **Placeholder scan:** TBD/TODO/"적절히" 없음. 모든 코드 step에 완전한 코드.
 
-**Type consistency:** `responses.json` 키 포맷 `${sample}_${mode}`가 Task 1 생성(`f"{s}_{m}"`)과 Task 2 룩업(`` `${sample}_${mode}` ``)에서 일치. `RESPONSES`는 `Record<string, LineupResponse>`로 캐스팅, `LineupResponse`는 api.ts(B) 타입. `SAMPLES`/`MODES` 값(`pa200`/`pa5`, `BALANCED`/`COMPETITIVE`)이 스크립트·테스트·App 토글에서 동일.
+**Type consistency:** `responses.json` 키가 sample(`pa200`/`pa5`)로, Task 1 생성(`{s: ...}`)·테스트(`set(SAMPLES)`)·Task 2 룩업(`RESPONSES[sample]`)에서 일치. `RESPONSES`는 `Record<Sample, LineupResponse>`로 캐스팅, `LineupResponse`는 api.ts(B) 타입. `lineup_mode`는 스크립트·테스트 모두 `BALANCED` 고정.
