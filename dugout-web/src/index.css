@@ -1,0 +1,36 @@
+body { font-family: system-ui, sans-serif; margin: 2rem; color: #1a1a1a; }
+.controls { display: flex; gap: 1.5rem; margin: 1rem 0; }
+.error { color: #c0392b; }
+.fairness { color: #555; font-style: italic; }
+.lineup { display: grid; gap: 0.25rem; padding-left: 0; list-style: none; }
+.lineup li { display: grid; grid-template-columns: 1.5rem 8rem 2.5rem 1fr; gap: 0.5rem; align-items: baseline; }
+.lineup .order { font-weight: 700; }
+.lineup .pos { color: #2980b9; }
+.lineup .reason { color: #555; font-size: 0.9rem; }
+
+.diamond {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  margin: 2rem 0;
+  background: #2e7d32;
+  border-radius: 8px;
+}
+.slot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1.1;
+}
+.slot strong { display: block; }
+.slot-P  { left: 50%; top: 62%; }
+.slot-C  { left: 50%; top: 92%; }
+.slot-1B { left: 78%; top: 60%; }
+.slot-2B { left: 64%; top: 40%; }
+.slot-3B { left: 22%; top: 60%; }
+.slot-SS { left: 36%; top: 40%; }
+.slot-LF { left: 18%; top: 18%; }
+.slot-CF { left: 50%; top: 8%; }
+.slot-RF { left: 82%; top: 18%; }
